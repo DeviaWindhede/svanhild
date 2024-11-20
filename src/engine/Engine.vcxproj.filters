@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="file">
+      <UniqueIdentifier>{25CB967C-1102-980D-BAEE-7D10A604140F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="mesh">
+      <UniqueIdentifier>{B2919A7C-9EC8-9B0D-47B5-811033CB170F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="shader">
+      <UniqueIdentifier>{1C21B11B-08C3-DBF1-F17D-EF45DDBE6242}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="ApplicationTimer.h" />
+    <ClInclude Include="D3D12Window.h" />
+    <ClInclude Include="DXHelper.h" />
+    <ClInclude Include="IWindow.h" />
+    <ClInclude Include="InputManager.h" />
+    <ClInclude Include="MathDefines.h" />
+    <ClInclude Include="StringHelper.h" />
+    <ClInclude Include="Win32Application.h" />
+    <ClInclude Include="file\BinaryAnimationFactory.h">
+      <Filter>file</Filter>
+    </ClInclude>
+    <ClInclude Include="file\BinaryFileUtility.h">
+      <Filter>file</Filter>
+    </ClInclude>
+    <ClInclude Include="file\BinaryMeshFactory.h">
+      <Filter>file</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh\AnimationFactory.h">
+      <Filter>mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh\Bone.h">
+      <Filter>mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh\FBXLoadStructs.h">
+      <Filter>mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh\FactoryStructs.h">
+      <Filter>mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh\ModelFactory.h">
+      <Filter>mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh\Pose.h">
+      <Filter>mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh\Skeleton.h">
+      <Filter>mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh\TextureFactory.h">
+      <Filter>mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="mesh\Vertex.h">
+      <Filter>mesh</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.h" />
+    <ClInclude Include="UploadBuffer.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ApplicationTimer.cpp" />
+    <ClCompile Include="D3D12Window.cpp" />
+    <ClCompile Include="IWindow.cpp" />
+    <ClCompile Include="InputManager.cpp" />
+    <ClCompile Include="Win32Application.cpp" />
+    <ClCompile Include="file\BinaryAnimationFactory.cpp">
+      <Filter>file</Filter>
+    </ClCompile>
+    <ClCompile Include="file\BinaryFileUtility.cpp">
+      <Filter>file</Filter>
+    </ClCompile>
+    <ClCompile Include="file\BinaryMeshFactory.cpp">
+      <Filter>file</Filter>
+    </ClCompile>
+    <ClCompile Include="mesh\AnimationFactory.cpp">
+      <Filter>mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="mesh\ModelFactory.cpp">
+      <Filter>mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="mesh\Skeleton.cpp">
+      <Filter>mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="mesh\TextureFactory.cpp">
+      <Filter>mesh</Filter>
+    </ClCompile>
+    <ClCompile Include="pch.cpp" />
+    <ClCompile Include="UploadBuffer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="shader\default.hlsl">
+      <Filter>shader</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="shader\common.hlsli">
+      <Filter>shader</Filter>
+    </None>
+  </ItemGroup>
+</Project>
