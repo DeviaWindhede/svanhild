@@ -149,7 +149,7 @@ void Mesh::InitUploadBufferTransfer(
 	// index buffer view
 	{
 		ibv = {};
-		ibv.BufferLocation = resourceBuffer->GetGPUVirtualAddress();
+		ibv.BufferLocation = resourceBuffer->GetGPUVirtualAddress() + vbv.SizeInBytes;
 		ibv.SizeInBytes = static_cast<UINT>(sizeof(UINT16) * IndexCount());
 		ibv.Format = DXGI_FORMAT_R16_UINT; // DXGI_FORMAT_R32_UINT
 	}
