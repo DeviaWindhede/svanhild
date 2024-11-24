@@ -88,6 +88,7 @@ private:
     ComPtr<IDXGISwapChain3> mySwapChain;
     ComPtr<ID3D12Device> myDevice;
     ComPtr<ID3D12Resource> myRenderTargets[FrameCount];
+    ComPtr<ID3D12Resource> myDepthBuffer;
     ComPtr<ID3D12CommandAllocator> myCommandAllocator[FrameCount];
     ComPtr<ID3D12CommandAllocator> myBundleAllocator;
     ComPtr<ID3D12CommandQueue> myCommandQueue;
@@ -95,6 +96,7 @@ private:
     ComPtr<ID3D12DescriptorHeap> myRtvHeap;
     ComPtr<ID3D12DescriptorHeap> myCbvHeap;
     ComPtr<ID3D12DescriptorHeap> mySrvHeap;
+    ComPtr<ID3D12DescriptorHeap> myDsvHeap;
     ComPtr<ID3D12PipelineState> myPipelineState;
     ComPtr<ID3D12GraphicsCommandList> myCommandList;
     ComPtr<ID3D12GraphicsCommandList> myBundle;
@@ -120,6 +122,7 @@ private:
 
     Mesh myTempMesh;
     void LoadMesh(class Mesh& aMesh);
+    void LoadTexture();
 
     std::vector<UINT8> GenerateTextureData();
 };

@@ -121,31 +121,34 @@ void D3D12Window::LoadPipeline()
 
 	// Create descriptor heaps.
 	{
-		// Describe and create a render target view (RTV) descriptor heap.
-		D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-		rtvHeapDesc.NumDescriptors = FrameCount;
-		rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
-		rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
-		ThrowIfFailed(myDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&myRtvHeap)));
+		// CBV, SRV, UAV
+		{
+			// Describe and create a render target view (RTV) descriptor heap.
+			D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
+			rtvHeapDesc.NumDescriptors = FrameCount;
+			rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+			rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+			ThrowIfFailed(myDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&myRtvHeap)));
 
-		// Describe and create a constant buffer view (CBV) descriptor heap.
-		// Flags indicate that this descriptor heap can be bound to the pipeline 
-		// and that descriptors contained in it can be referenced by a root table.
-		D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
-		cbvHeapDesc.NumDescriptors = CbvCount;
-		cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		ThrowIfFailed(myDevice->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&myCbvHeap)));
+			// Describe and create a constant buffer view (CBV) descriptor heap.
+			// Flags indicate that this descriptor heap can be bound to the pipeline 
+			// and that descriptors contained in it can be referenced by a root table.
+			D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
+			cbvHeapDesc.NumDescriptors = CbvCount;
+			cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+			cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+			ThrowIfFailed(myDevice->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&myCbvHeap)));
 
-		myRtvDescriptorSize = myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+			myRtvDescriptorSize = myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-		D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-		srvHeapDesc.NumDescriptors = SrvCount;
-		srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-		srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-		ThrowIfFailed(myDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mySrvHeap)));
+			D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
+			srvHeapDesc.NumDescriptors = SrvCount;
+			srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+			srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+			ThrowIfFailed(myDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mySrvHeap)));
 
-		myRtvDescriptorSize = myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+			myRtvDescriptorSize = myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+		}
 	}
 
 	// Create frame resources.
@@ -252,8 +255,10 @@ void D3D12Window::LoadAssets()
 		psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
 		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 		psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-		psoDesc.DepthStencilState.DepthEnable = FALSE;
-		psoDesc.DepthStencilState.StencilEnable = FALSE;
+		psoDesc.DepthStencilState.DepthEnable = TRUE;
+		psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+		psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL; // Test: pass if the pixel is closer to the camera
+		psoDesc.DepthStencilState.StencilEnable = FALSE;  // Disable stencil testing
 		psoDesc.SampleMask = UINT_MAX;
 		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		psoDesc.NumRenderTargets = 1;
@@ -280,7 +285,7 @@ void D3D12Window::LoadAssets()
 		//	{ { -0.25f, -0.25f * myAspectRatio, 0.0f }, {}, { 0.0f, 1.0f }, {}, {}, {} }
 		//};
 
-		auto package = ModelFactory::LoadMeshFromFBX(StringHelper::ws2s(GetAssetFullPath(L"TGE.fbx")));
+		auto package = ModelFactory::LoadMeshFromFBX(StringHelper::ws2s(GetAssetFullPath(L"sm_oneTrueCube.fbx")));
 
 		myTempMesh.LoadMeshData(package.meshData[0].vertices, package.meshData[0].indices);
 	}
@@ -385,34 +390,72 @@ void D3D12Window::LoadAssets()
 		cbvDesc[0].BufferLocation = m_constantBuffer->GetGPUVirtualAddress();
 		cbvDesc[0].SizeInBytes = constantBufferSize;
 
-		//CD3DX12_CPU_DESCRIPTOR_HANDLE cbvHandle(mySrvHeap->GetCPUDescriptorHandleForHeapStart());
-		//CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(cbvHandle, CbvCount, descriptorSize);
-		//CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle(srvHandle, SrvCount, myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
-
-		// Create CBVs
-		//for (int i = 0; i < CbvCount; i++) {
-		//	myDevice->CreateConstantBufferView(&cbvDesc[i], cbvHandle);
-		//	cbvHandle.Offset(1, descriptorSize);
-		//}
-
-		// Create SRVs
-		//for (int i = 0; i < SrvCount; i++) {
-		//    myDevice->CreateShaderResourceView(srvResource[i], &srvDesc[i], srvHandle);
-		//    srvHandle.Offset(1, myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
-		//}
-
-		// Create UAVs
-		//for (int i = 0; i < UavCount; i++) {
-		//    myDevice->CreateUnorderedAccessView(uavResource[i], nullptr, &uavDesc[i], uavHandle);
-		//    uavHandle.Offset(1, myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV));
-		//}
-
-
 		// Map and initialize the constant buffer. We don't unmap this until the
 		// app closes. Keeping things mapped for the lifetime of the resource is okay.
 		CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
 		ThrowIfFailed(m_constantBuffer->Map(0, &readRange, reinterpret_cast<void**>(&m_pCbvDataBegin)));
 		memcpy(m_pCbvDataBegin, &m_constantBufferData, sizeof(m_constantBufferData));
+	}
+
+	// Depth buffer 
+	{
+		D3D12_HEAP_PROPERTIES dsHeapProperties;
+		ZeroMemory(&dsHeapProperties, sizeof(&dsHeapProperties));
+
+		dsHeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
+		dsHeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
+		dsHeapProperties.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
+		dsHeapProperties.CreationNodeMask = NULL;
+		dsHeapProperties.VisibleNodeMask = NULL;
+
+		// Describe resource
+		D3D12_RESOURCE_DESC dsResDesc;
+		ZeroMemory(&dsResDesc, sizeof(D3D12_RESOURCE_DESC));
+
+		dsResDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+		dsResDesc.Alignment = 0;
+		dsResDesc.Width = myViewport.Width;
+		dsResDesc.Height = myViewport.Height;
+		dsResDesc.DepthOrArraySize = 1;
+		dsResDesc.MipLevels = 1;
+		dsResDesc.Format = DXGI_FORMAT_D32_FLOAT;
+		dsResDesc.SampleDesc.Count = 1;
+		dsResDesc.SampleDesc.Quality = 0;
+		dsResDesc.Layout = D3D12_TEXTURE_LAYOUT_UNKNOWN;
+		dsResDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL;
+
+		// Describe clear value 
+		D3D12_CLEAR_VALUE clearValue;
+		ZeroMemory(&clearValue, sizeof(D3D12_CLEAR_VALUE));
+
+		clearValue.Format = DXGI_FORMAT_D32_FLOAT;
+		clearValue.DepthStencil.Depth = 1.0f;
+		clearValue.DepthStencil.Stencil = 0;
+
+		myDevice->CreateCommittedResource(
+			&dsHeapProperties,
+			D3D12_HEAP_FLAG_NONE,
+			&dsResDesc,
+			D3D12_RESOURCE_STATE_DEPTH_WRITE,
+			&clearValue,
+			IID_PPV_ARGS(&myDepthBuffer)
+		);
+
+		// === Create view description
+		D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc = {};
+		dsvDesc.Format = DXGI_FORMAT_D32_FLOAT;
+		dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+		dsvDesc.Texture2D.MipSlice = 0;
+		dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+		D3D12_DESCRIPTOR_HEAP_DESC dsvHeapDesc = {};
+		dsvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_DSV;
+		dsvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+		dsvHeapDesc.NumDescriptors = 1;
+		dsvHeapDesc.NodeMask = NULL;
+		ThrowIfFailed(myDevice->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&myDsvHeap)));
+
+		myDevice->CreateDepthStencilView(myDepthBuffer.Get(), &dsvDesc, myDsvHeap->GetCPUDescriptorHandleForHeapStart());
 	}
 
 	// Close the command list and execute it to begin the initial GPU setup.
@@ -468,6 +511,10 @@ void D3D12Window::LoadMesh(Mesh& aMesh)
 	myCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
 
 	WaitForGpu();
+}
+
+void D3D12Window::LoadTexture()
+{
 }
 
 // Generate a simple black and white checkerboard texture.
@@ -710,8 +757,11 @@ void D3D12Window::PopulateCommandList()
 		myCommandList->ResourceBarrier(1, &barrier);
 	}
 
+	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = myDsvHeap->GetCPUDescriptorHandleForHeapStart();
 	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(myRtvHeap->GetCPUDescriptorHandleForHeapStart(), myFrameIndex, myRtvDescriptorSize);
-	myCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+	myCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
+
+	myCommandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, NULL);
 
 	// Record commands.
 	const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
