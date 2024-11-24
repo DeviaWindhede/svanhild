@@ -269,7 +269,7 @@ bool ModelFactory::GetMeshDataFromScene(
 		currentMeshData.indices.reserve(currentMeshData.indices.capacity());
 		currentMeshData.isAnimated = isSkeletalMesh;
 
-		unsigned int indexCounter = 0;
+		UINT16 indexCounter = 0;
 		for (int p = 0; p < fbxMeshPolygonCount; p++)
 		{
 			if (bHasMaterials)

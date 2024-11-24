@@ -13,7 +13,7 @@ struct MeshData
 	std::string name = "";
 	std::vector<Vertex> vertices = {};
 	std::vector<AnimatedVertex> animatedVertices = {};
-	std::vector<unsigned int> indices = {};
+	std::vector<UINT16> indices = {};
 	bool isAnimated = false;
 };
 

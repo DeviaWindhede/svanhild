@@ -24,7 +24,6 @@ D3D12Window::D3D12Window(UINT width, UINT height, std::wstring name) :
 	myFenceValues{},
 	myRtvDescriptorSize(0),
 	myFenceEvent{},
-	myVertexBufferView{},
 	m_pCbvDataBegin{},
 	_cameraPitch(0.0f),
 	_cameraYaw(0.0f),
@@ -283,35 +282,7 @@ void D3D12Window::LoadAssets()
 
 		auto package = ModelFactory::LoadMeshFromFBX(StringHelper::ws2s(GetAssetFullPath(L"TGE.fbx")));
 
-		_tempMeshVertexCount = package.meshData[0].vertices.size();
-		const UINT vertexBufferSize = sizeof(Vertex) * _tempMeshVertexCount;
-
-		// Note: using upload heaps to transfer static data like vert buffers is not 
-		// recommended. Every time the GPU needs it, the upload heap will be marshalled 
-		// over. Please read up on Default Heap usage. An upload heap is used here for 
-		// code simplicity and because there are very few verts to actually transfer.
-
-		CD3DX12_HEAP_PROPERTIES properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
-		CD3DX12_RESOURCE_DESC desc = CD3DX12_RESOURCE_DESC::Buffer(vertexBufferSize);
-		ThrowIfFailed(myDevice->CreateCommittedResource(
-			&properties,
-			D3D12_HEAP_FLAG_NONE,
-			&desc,
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&myVertexBuffer)));
-
-		// Copy the triangle data to the vertex buffer.
-		UINT8* pVertexDataBegin;
-		CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
-		ThrowIfFailed(myVertexBuffer->Map(0, &readRange, reinterpret_cast<void**>(&pVertexDataBegin)));
-		memcpy(pVertexDataBegin, package.meshData[0].vertices.data(), vertexBufferSize);
-		myVertexBuffer->Unmap(0, nullptr);
-
-		// Initialize the vertex buffer view.
-		myVertexBufferView.BufferLocation = myVertexBuffer->GetGPUVirtualAddress();
-		myVertexBufferView.StrideInBytes = sizeof(Vertex);
-		myVertexBufferView.SizeInBytes = vertexBufferSize;
+		myTempMesh.LoadMeshData(package.meshData[0].vertices, package.meshData[0].indices);
 	}
 
 
@@ -456,8 +427,9 @@ void D3D12Window::LoadAssets()
 
 		myBundle->SetGraphicsRootConstantBufferView(0, m_constantBuffer->GetGPUVirtualAddress());
 		myBundle->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		myBundle->IASetVertexBuffers(0, 1, &myVertexBufferView);
-		myBundle->DrawInstanced(3, 1, 0, 0);
+		myBundle->IASetVertexBuffers(0, 1, &myTempMesh.VertexBufferView());
+		myBundle->IASetIndexBuffer(&myTempMesh.IndexBufferView());
+		myBundle->DrawIndexedInstanced(myTempMesh.VertexCount(), 1, 0, 0, 0);
 		ThrowIfFailed(myBundle->Close());
 	}
 
@@ -479,6 +451,23 @@ void D3D12Window::LoadAssets()
 		// complete before continuing.
 		WaitForGpu();
 	}
+}
+
+#include "Mesh.h"
+void D3D12Window::LoadMesh(Mesh& aMesh)
+{
+	ThrowIfFailed(myCommandAllocator[myFrameIndex]->Reset());
+	ThrowIfFailed(myCommandList->Reset(myCommandAllocator[myFrameIndex].Get(), myPipelineState.Get()));
+	
+	aMesh.InitUploadBufferTransfer(myDevice, myCommandList);
+
+	ThrowIfFailed(myCommandList->Close());
+
+	// Execute the command list
+	ID3D12CommandList* commandLists[] = { myCommandList.Get() };
+	myCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+
+	WaitForGpu();
 }
 
 // Generate a simple black and white checkerboard texture.
@@ -521,8 +510,15 @@ std::vector<UINT8> D3D12Window::GenerateTextureData()
 // Update frame-based values.
 void D3D12Window::OnUpdate()
 {
+	if (!myTempMesh.InitializedBuffer())
+	{
+		LoadMesh(myTempMesh);
+	}
+
+	
 	const float translationSpeed = 0.005f;
 	const float offsetBounds = 1.f;
+
 
 	//cameraTransform = DirectX::XMMatrixMultiply(cameraTransform, DirectX::XMMatrixRotationY(3.14f * _timer.GetDeltaTime()));
 
@@ -710,6 +706,7 @@ void D3D12Window::PopulateCommandList()
 			myRenderTargets[myFrameIndex].Get(),
 			D3D12_RESOURCE_STATE_PRESENT,
 			D3D12_RESOURCE_STATE_RENDER_TARGET);
+
 		myCommandList->ResourceBarrier(1, &barrier);
 	}
 
@@ -724,8 +721,32 @@ void D3D12Window::PopulateCommandList()
 	//myCommandList->ExecuteBundle(myBundle.Get());
 
 	myCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-	myCommandList->IASetVertexBuffers(0, 1, &myVertexBufferView);
-	myCommandList->DrawInstanced(_tempMeshVertexCount, 1, 0, 0);
+	myCommandList->IASetVertexBuffers(0, 1, &myTempMesh.VertexBufferView());
+	myCommandList->IASetIndexBuffer(&myTempMesh.IndexBufferView());
+	//myCommandList->DrawInstanced(myTempMesh.VertexCount(), 1, 0, 0);
+
+	{
+		size_t vertexCount = myTempMesh.VertexCount();    // Number of vertices
+		size_t indexCount = myTempMesh.IndexCount();     // Number of indices
+
+		// StartIndexLocation is the number of vertices, since the index buffer starts right after the vertex buffer
+		UINT startIndexLocation = static_cast<UINT>(vertexCount);
+
+		//myCommandList->DrawIndexedInstanced(
+		//	indexCount,             // Number of indices
+		//	1,                      // Number of instances
+		//	0,                      // Start vertex location (0 for starting at the beginning of the vertex buffer)
+		//	startIndexLocation,     // Start index location (the index from where to start drawing)
+		//	0                       // Start instance location (0 for no instance offset)
+		//);
+		myCommandList->DrawIndexedInstanced(
+			indexCount,             // Number of indices
+			1,                      // Number of instances
+			0,                      // Start vertex location (typically 0)
+			0,                      // Start index location (typically 0)
+			0                       // Start instance location (typically 0)
+		);
+	}
 
 	// Indicate that the back buffer will now be used to present.
 	{

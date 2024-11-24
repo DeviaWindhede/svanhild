@@ -13,6 +13,9 @@
 
 #include "IWindow.h"
 #include <vector>
+#include "UploadBuffer.h"
+
+#include "Mesh.h"
 
 // Note that while ComPtr is used to manage the lifetime of resources on the CPU,
 // it has no understanding of the lifetime of resources on the GPU. Apps must account
@@ -63,7 +66,6 @@ private:
     DirectX::XMFLOAT3 _cameraPosition;
     float _cameraPitch;
     float _cameraYaw;
-    UINT _tempMeshVertexCount;
 
     struct SceneConstantBuffer
     {
@@ -99,8 +101,6 @@ private:
     UINT myRtvDescriptorSize;
 
     // App resources
-    ComPtr<ID3D12Resource> myVertexBuffer;
-    D3D12_VERTEX_BUFFER_VIEW myVertexBufferView;
     ComPtr<ID3D12Resource> m_constantBuffer;
     ComPtr<ID3D12Resource> m_texture;
     SceneConstantBuffer m_constantBufferData;
@@ -117,6 +117,9 @@ private:
     void PopulateCommandList();
     void MoveToNextFrame();
     void WaitForGpu();
+
+    Mesh myTempMesh;
+    void LoadMesh(class Mesh& aMesh);
 
     std::vector<UINT8> GenerateTextureData();
 };

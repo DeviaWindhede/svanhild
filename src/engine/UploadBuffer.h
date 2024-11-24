@@ -11,7 +11,10 @@ public:
 	UINT8* m_pDataCur = nullptr;      // current position of upload buffer
 	UINT8* m_pDataEnd = nullptr;      // ending position of upload buffer
 
+	~UploadBuffer();
 	HRESULT Initialize(ComPtr<ID3D12Device> aDevice, size_t aSize);
+	void FinishInitialization() const;
+	void Reset();
 
 	HRESULT SetDataToUploadBuffer(
 		const void* pData,
@@ -24,25 +27,26 @@ public:
 	template<typename T>
 	HRESULT SetConstants(
 		T aConstants[],
-		UINT aAlignment = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT,
-		UINT aOffset = 0
+		UINT aCount,
+		UINT aAlignment, // = D3D12_CONSTANT_BUFFER_DATA_PLACEMENT_ALIGNMENT
+		UINT& outByteOffset
 	)
 	{
 		return SetDataToUploadBuffer(
-			aConstants, sizeof(T), sizeof(aConstants) / sizeof(T),
+			aConstants, sizeof(T), aCount / sizeof(T),
 			aAlignment,
-			aOffset
+			outByteOffset
 		);
 	}
 
-	HRESULT SetVertices(Vertex aVertices[], UINT aOffset = 0)
+	HRESULT SetVertices(Vertex aVertices[], UINT aCount, UINT& outByteOffset)
 	{
-		return SetConstants<Vertex>(aVertices, sizeof(Vertex), aOffset);
+		return SetConstants<Vertex>(aVertices, aCount, sizeof(float), outByteOffset);
 	}
 
-	HRESULT SetIndices(UINT aIndices[], UINT aOffset = 0)
+	HRESULT SetIndices(UINT16 aIndices[], UINT aCount, UINT& outByteOffset)
 	{
-		return SetConstants<UINT>(aIndices, sizeof(UINT), aOffset);
+		return SetConstants<UINT16>(aIndices, aCount, sizeof(UINT16), outByteOffset);
 	}
 
 	UINT Align(UINT uLocation, UINT uAlign)

@@ -58,6 +58,7 @@
     </ClInclude>
     <ClInclude Include="pch.h" />
     <ClInclude Include="UploadBuffer.h" />
+    <ClInclude Include="Mesh.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApplicationTimer.cpp" />
@@ -88,6 +89,7 @@
     </ClCompile>
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="UploadBuffer.cpp" />
+    <ClCompile Include="Mesh.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shader\default.hlsl">
