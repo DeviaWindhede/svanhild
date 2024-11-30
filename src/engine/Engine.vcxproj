@@ -119,6 +119,7 @@
     <ClInclude Include="D3D12Window.h" />
     <ClInclude Include="DX12.h" />
     <ClInclude Include="DXHelper.h" />
+    <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="GraphicsEngine.h" />
     <ClInclude Include="IResource.h" />
     <ClInclude Include="IWindow.h" />
@@ -150,6 +151,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="D3D12Window.cpp" />
     <ClCompile Include="DX12.cpp" />
+    <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="GraphicsEngine.cpp" />
     <ClCompile Include="IWindow.cpp" />
     <ClCompile Include="InputManager.cpp" />

@@ -18,7 +18,7 @@ void GameWindow::OnInit()
 		ThrowIfFailed(dx12.myDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_BUNDLE, dx12.myBundleAllocator.Get(), dx12.myPipelineState.Get(), IID_PPV_ARGS(&dx12.myBundle)));
 		dx12.myBundle->SetGraphicsRootSignature(dx12.myRootSignature.Get());
 
-		dx12.myBundle->SetGraphicsRootConstantBufferView(0, frameBuffer->GetGPUVirtualAddress());
+		dx12.myBundle->SetGraphicsRootConstantBufferView(0, frameBuffer.resource->GetGPUVirtualAddress());
 		dx12.myBundle->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 		dx12.myBundle->IASetVertexBuffers(0, 1, &myTempMesh.VertexBufferView());
 		dx12.myBundle->IASetIndexBuffer(&myTempMesh.IndexBufferView());
@@ -146,12 +146,12 @@ void GameWindow::OnUpdate()
 		//auto R = DirectX::XMMatrixRotationY(std::sin(_timer.GetTotalTime()));
 		auto R = DirectX::XMMatrixRotationY(0);
 		auto T = DirectX::XMMatrixTranslation(0, 0, 10);
-		frameBufferData.testTransform = S * R * T;
+		frameBuffer.frameBufferData.testTransform = S * R * T;
 
-		frameBufferData.offset.x += translationSpeed;
-		if (frameBufferData.offset.x > offsetBounds)
+		frameBuffer.frameBufferData.offset.x += translationSpeed;
+		if (frameBuffer.frameBufferData.offset.x > offsetBounds)
 		{
-			frameBufferData.offset.x = -offsetBounds;
+			frameBuffer.frameBufferData.offset.x = -offsetBounds;
 		}
 	}
 }

@@ -5,11 +5,10 @@ struct FrameBufferData
 {
     DirectX::XMMATRIX view;
     DirectX::XMMATRIX projection;
-    DirectX::XMFLOAT2 windowSize;
     DirectX::XMFLOAT2 viewport;
     float nearPlane;
     float farPlane;
-    float padding0[2];
+    float padding0[4];
     DirectX::XMMATRIX testTransform;
     DirectX::XMFLOAT4 offset;
     float padding[4]; // Padding so the constant buffer is 256-byte aligned.

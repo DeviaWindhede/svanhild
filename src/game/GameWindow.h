@@ -1,5 +1,7 @@
 #pragma once
 #include <D3D12Window.h>
+#include "Mesh.h"
+#include "Texture.h"
 
 class GameWindow : public D3D12Window
 {

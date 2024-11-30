@@ -29,37 +29,13 @@ void D3D12Window::OnInit()
 	InputManager::CreateInstance();
 
 	dx12.LoadPipeline();
-
-	// Init Frame Buffer
-	{
-		const UINT descriptorSize = dx12.myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		const UINT constantBufferSize = sizeof(FrameBufferData);    // CB size is required to be 256-byte aligned.
-
-		ThrowIfFailed(dx12.myDevice->CreateCommittedResource(
-			&keep(CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD)),
-			D3D12_HEAP_FLAG_NONE,
-			&keep(CD3DX12_RESOURCE_DESC::Buffer(constantBufferSize)),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&frameBuffer)));
-
-		// Describe and create a constant buffer view.
-		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc[1] = {};
-		cbvDesc[0].BufferLocation = frameBuffer->GetGPUVirtualAddress();
-		cbvDesc[0].SizeInBytes = constantBufferSize;
-
-		// Map and initialize the constant buffer. We don't unmap this until the
-		// app closes. Keeping things mapped for the lifetime of the resource is okay.
-		CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
-		ThrowIfFailed(frameBuffer->Map(0, &readRange, reinterpret_cast<void**>(&frameBufferCbvDataBegin)));
-		memcpy(frameBufferCbvDataBegin, &frameBufferData, sizeof(frameBufferData));
-	}
+	frameBuffer.Init(dx12);
 }
 
 void D3D12Window::OnBeginFrame()
 {
 	resourceLoader.Update();
-	UpdateFrameBuffer();
+	frameBuffer.Update(dx12, camera);
 
 
 	// Command list allocators can only be reset when the associated 
@@ -78,7 +54,7 @@ void D3D12Window::OnBeginFrame()
 	ID3D12DescriptorHeap* ppHeaps[] = { dx12.mySrvHeap.Get() };
 	dx12.myCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
-	dx12.myCommandList->SetGraphicsRootConstantBufferView(0, frameBuffer->GetGPUVirtualAddress());
+	dx12.myCommandList->SetGraphicsRootConstantBufferView(0, frameBuffer.resource->GetGPUVirtualAddress());
 
 
 	dx12.myCommandList->RSSetViewports(1, &dx12.myViewport);
@@ -145,16 +121,4 @@ void D3D12Window::OnDestroy()
 	CloseHandle(dx12.myFenceEvent);
 
 	InputManager::DestroyInstance();
-}
-
-void D3D12Window::UpdateFrameBuffer()
-{
-	frameBufferData.projection = camera.Projection();
-	frameBufferData.view = camera.View();
-	frameBufferData.nearPlane = camera.nearPlane;
-	frameBufferData.farPlane = camera.farPlane;
-	frameBufferData.windowSize = DirectX::XMFLOAT2(static_cast<float>(myWidth), static_cast<float>(myHeight));
-	frameBufferData.viewport = DirectX::XMFLOAT2(static_cast<float>(dx12.myViewport.Width), static_cast<float>(dx12.myViewport.Height));
-
-	memcpy(frameBufferCbvDataBegin, &frameBufferData, sizeof(frameBufferData));
 }

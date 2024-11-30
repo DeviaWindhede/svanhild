@@ -1,5 +1,6 @@
 #pragma once
 
+#include "MathDefines.h"
 #include <DirectXMath.h>
 
 class Camera
