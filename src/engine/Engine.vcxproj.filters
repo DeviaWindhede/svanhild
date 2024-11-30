@@ -64,6 +64,8 @@
     <ClInclude Include="GraphicsEngine.h" />
     <ClInclude Include="DX12.h" />
     <ClInclude Include="SceneBufferTypes.h" />
+    <ClInclude Include="IResource.h" />
+    <ClInclude Include="Camera.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApplicationTimer.cpp" />
@@ -99,6 +101,7 @@
     <ClCompile Include="ResourceLoader.cpp" />
     <ClCompile Include="GraphicsEngine.cpp" />
     <ClCompile Include="DX12.cpp" />
+    <ClCompile Include="Camera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shader\default.hlsl">

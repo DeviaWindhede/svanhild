@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Mesh.h"
+#include "DX12.h"
 #include <vector>
 
 Mesh::~Mesh()
@@ -42,34 +43,7 @@ void Mesh::Reset()
 	//data = nullptr;
 }
 
-void Mesh::LoadMeshData(const std::vector<Vertex>& aVertices, const std::vector<UINT16>& aIndices)
-{
-	//if (data != nullptr)
-	if (vertices != nullptr || indices != nullptr)
-	{
-		Reset();
-	}
-
-	vertexCount = aVertices.size();
-	indexCount = static_cast<UINT16>(aIndices.size());
-
-	vertices = new Vertex[vertexCount];
-	indices = new UINT16[indexCount];
-	memcpy(vertices, aVertices.data(), vertexCount * sizeof(Vertex));
-	memcpy(indices, aIndices.data(), indexCount * sizeof(UINT16));
-
-	//size_t totalSize = sizeof(Vertex) * vertexCount + sizeof(UINT) * indexCount;
-	//data = new unsigned char[totalSize]; // TODO: Custom allocator for all asset content
-
-	//memcpy(data, aVertices.data(), vertexCount * sizeof(Vertex));
-	//memcpy((data + vertexCount * sizeof(Vertex)), aIndices.data(), indexCount * sizeof(UINT16));
-
-}
-
-void Mesh::InitUploadBufferTransfer(
-	ComPtr<ID3D12Device>& aDevice,
-	ComPtr<ID3D12GraphicsCommandList>& aCommandList
-)
+void Mesh::LoadToGPU(class DX12& aDx12)
 {
 	assert(!initializedBuffers && "Trying to initialize buffer multiple times!");
 
@@ -77,7 +51,7 @@ void Mesh::InitUploadBufferTransfer(
 	size_t indexSize = sizeof(UINT16) * indexCount;
 	size_t bufferSize = vertexSize + indexSize;
 
-	aDevice->CreateCommittedResource(
+	aDx12.myDevice->CreateCommittedResource(
 		&keep(CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT)),
 		D3D12_HEAP_FLAG_NONE,
 		&keep(CD3DX12_RESOURCE_DESC::Buffer(bufferSize)),
@@ -101,7 +75,7 @@ void Mesh::InitUploadBufferTransfer(
 		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
 
-		HRESULT hr = aDevice->CreateCommittedResource(
+		HRESULT hr = aDx12.myDevice->CreateCommittedResource(
 			&heapProperties,
 			D3D12_HEAP_FLAG_NONE,
 			&resourceDesc,
@@ -122,21 +96,13 @@ void Mesh::InitUploadBufferTransfer(
 
 		uploadHeap->Unmap(0, nullptr);
 	}
-	//buffer.Initialize(aDevice, bufferSize);
-	//buffer.SetVertices(Vertices(), vertexCount, verticesOffset);
-	//buffer.SetIndices(Indices(), indexCount, indicesOffset);
-	//buffer.FinishInitialization();
-
-	//aCommandList->CopyBufferRegion(resourceBuffer.Get(), 0, buffer.m_spUploadBuffer.Get(), 0, bufferSize);
-
-
 	initializedBuffers = true;
 
-	PerformResourceBarrier(aCommandList, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
+	PerformResourceBarrier(aDx12.myCommandList, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
 
-	aCommandList->CopyBufferRegion(resourceBuffer.Get(), 0, uploadHeap.Get(), 0, bufferSize);
+	aDx12.myCommandList->CopyBufferRegion(resourceBuffer.Get(), 0, uploadHeap.Get(), 0, bufferSize);
 
-	PerformResourceBarrier(aCommandList, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+	PerformResourceBarrier(aDx12.myCommandList, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
 	// vertex buffer view
 	{
@@ -153,5 +119,34 @@ void Mesh::InitUploadBufferTransfer(
 		ibv.SizeInBytes = static_cast<UINT>(sizeof(UINT16) * IndexCount());
 		ibv.Format = DXGI_FORMAT_R16_UINT; // DXGI_FORMAT_R32_UINT
 	}
+}
+
+void Mesh::OnGPULoadComplete()
+{
+	IResource::OnGPULoadComplete();
+	uploadHeap = nullptr;
+}
+
+void Mesh::LoadMeshData(const std::vector<Vertex>& aVertices, const std::vector<UINT16>& aIndices)
+{
+	//if (data != nullptr)
+	if (vertices != nullptr || indices != nullptr)
+	{
+		Reset();
+	}
+
+	vertexCount = aVertices.size();
+	indexCount = static_cast<UINT16>(aIndices.size());
+
+	vertices = new Vertex[vertexCount];
+	indices = new UINT16[indexCount];
+	memcpy(vertices, aVertices.data(), vertexCount * sizeof(Vertex));
+	memcpy(indices, aIndices.data(), indexCount * sizeof(UINT16));
+
+	//size_t totalSize = sizeof(Vertex) * vertexCount + sizeof(UINT) * indexCount;
+	//data = new unsigned char[totalSize]; // TODO: Custom allocator for all asset content
+
+	//memcpy(data, aVertices.data(), vertexCount * sizeof(Vertex));
+	//memcpy((data + vertexCount * sizeof(Vertex)), aIndices.data(), indexCount * sizeof(UINT16));
 
 }

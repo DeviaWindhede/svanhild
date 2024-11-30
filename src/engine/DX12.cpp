@@ -13,11 +13,15 @@ DX12::DX12(UINT aWidth, UINT aHeight, bool aUseWarpDevice) :
 	myFenceEvent{},
 	useWarpDevice(aUseWarpDevice)
 {
-
+	for (UINT i = 0; i < MAX_SRV_COUNT; i++)
+	{
+		srvIndices.push(i);
+	}
 }
 
 DX12::~DX12()
 {
+
 }
 
 // Helper function for acquiring the first available hardware adapter that supports Direct3D 12.
@@ -183,7 +187,7 @@ void DX12::LoadPipeline()
 			// Flags indicate that this descriptor heap can be bound to the pipeline 
 			// and that descriptors contained in it can be referenced by a root table.
 			D3D12_DESCRIPTOR_HEAP_DESC cbvHeapDesc = {};
-			cbvHeapDesc.NumDescriptors = CbvCount;
+			cbvHeapDesc.NumDescriptors = MAX_CBV_COUNT;
 			cbvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 			cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 			ThrowIfFailed(myDevice->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&myCbvHeap)));
@@ -191,7 +195,7 @@ void DX12::LoadPipeline()
 			myRtvDescriptorSize = myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 			D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-			srvHeapDesc.NumDescriptors = SrvCount;
+			srvHeapDesc.NumDescriptors = MAX_SRV_COUNT;
 			srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
 			srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 			ThrowIfFailed(myDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mySrvHeap)));
@@ -202,16 +206,19 @@ void DX12::LoadPipeline()
 
 	// Create frame resources.
 	{
-		CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(myRtvHeap->GetCPUDescriptorHandleForHeapStart());
-
-		// Create a RTV for each frame.
-		for (UINT n = 0; n < FrameCount; n++)
+		// RTV
 		{
-			ThrowIfFailed(mySwapChain->GetBuffer(n, IID_PPV_ARGS(&myRenderTargets[n])));
-			myDevice->CreateRenderTargetView(myRenderTargets[n].Get(), nullptr, rtvHandle);
-			rtvHandle.Offset(1, myRtvDescriptorSize);
+			CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(myRtvHeap->GetCPUDescriptorHandleForHeapStart());
 
-			ThrowIfFailed(myDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&myCommandAllocator[n])));
+			// Create a RTV for each frame.
+			for (UINT n = 0; n < FrameCount; n++)
+			{
+				ThrowIfFailed(mySwapChain->GetBuffer(n, IID_PPV_ARGS(&myRenderTargets[n])));
+				myDevice->CreateRenderTargetView(myRenderTargets[n].Get(), nullptr, rtvHandle);
+				rtvHandle.Offset(1, myRtvDescriptorSize);
+
+				ThrowIfFailed(myDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&myCommandAllocator[n])));
+			}
 		}
 	}
 
@@ -231,7 +238,7 @@ void DX12::LoadPipeline()
 		}
 
 		CD3DX12_DESCRIPTOR_RANGE1 ranges[1]{ {} };
-		ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, SrvCount, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+		ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_SRV_COUNT, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 		//ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 
 		CD3DX12_ROOT_PARAMETER1 rootParameters[2]{ {}, {} };
@@ -323,31 +330,6 @@ void DX12::LoadPipeline()
 		myDevice->CreateDepthStencilView(myDepthBuffer.Get(), &dsvDesc, myDsvHeap->GetCPUDescriptorHandleForHeapStart());
 	}
 
-	// Create the constant buffer.
-	{
-		const UINT descriptorSize = myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		const UINT constantBufferSize = sizeof(FrameBuffer);    // CB size is required to be 256-byte aligned.
-
-		ThrowIfFailed(myDevice->CreateCommittedResource(
-			&keep(CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD)),
-			D3D12_HEAP_FLAG_NONE,
-			&keep(CD3DX12_RESOURCE_DESC::Buffer(constantBufferSize)),
-			D3D12_RESOURCE_STATE_GENERIC_READ,
-			nullptr,
-			IID_PPV_ARGS(&frameBuffer)));
-
-		// Describe and create a constant buffer view.
-		D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc[1] = {};
-		cbvDesc[0].BufferLocation = frameBuffer->GetGPUVirtualAddress();
-		cbvDesc[0].SizeInBytes = constantBufferSize;
-
-		// Map and initialize the constant buffer. We don't unmap this until the
-		// app closes. Keeping things mapped for the lifetime of the resource is okay.
-		CD3DX12_RANGE readRange(0, 0);        // We do not intend to read from this resource on the CPU.
-		ThrowIfFailed(frameBuffer->Map(0, &readRange, reinterpret_cast<void**>(&frameBufferCbvDataBegin)));
-		memcpy(frameBufferCbvDataBegin, &frameBufferData, sizeof(frameBufferData));
-	}
-
 	{
 		ComPtr<ID3DBlob> vertexShader;
 		ComPtr<ID3DBlob> pixelShader;
@@ -416,6 +398,26 @@ void DX12::LoadPipeline()
 	// Create the command list.
 	ThrowIfFailed(myDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, myCommandAllocator[myFrameIndex].Get(), myPipelineState.Get(), IID_PPV_ARGS(&myCommandList)));
 
+
+	// SRV
+	{
+		D3D12_SHADER_RESOURCE_VIEW_DESC nullSrvDesc = {};
+		nullSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		nullSrvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;  // A default format (it doesn't matter much since we won't be reading it)
+		nullSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+		nullSrvDesc.Texture2D.MostDetailedMip = 0;
+		nullSrvDesc.Texture2D.MipLevels = 0;
+
+		const UINT descriptorSize = myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+		CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(mySrvHeap->GetCPUDescriptorHandleForHeapStart());
+		ID3D12Resource* nullResource = nullptr;
+		for (UINT n = 0; n < MAX_SRV_COUNT; n++)
+		{
+			myDevice->CreateShaderResourceView(nullResource, &nullSrvDesc, srvHandle);
+			srvHandle.Offset(1, descriptorSize);
+		}
+	}
+
 	// Close the command list and execute it to begin the initial GPU setup.
 	ThrowIfFailed(myCommandList->Close());
 	ID3D12CommandList* ppCommandLists[] = { myCommandList.Get() };
@@ -472,4 +474,18 @@ void DX12::MoveToNextFrame()
 
 	// Set the fence value for the next frame.
 	myFenceValues[myFrameIndex] = currentFenceValue + 1;
+}
+
+UINT DX12::ReserveSrvIndex()
+{
+	assert(srvIndices.size() > 0);
+	UINT index = srvIndices.front();
+	srvIndices.pop();
+	return index;
+}
+
+void DX12::ReturnSrvIndex(UINT aIndex)
+{
+	assert(srvIndices.size() < MAX_SRV_COUNT);
+	srvIndices.push(aIndex);
 }

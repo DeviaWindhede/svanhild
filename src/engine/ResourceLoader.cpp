@@ -1,8 +1,14 @@
 #include "pch.h"
 #include "ResourceLoader.h"
+#include "IResource.h"
 #include "DXHelper.h"
 
-void ResourceLoader::LoadResources()
+ResourceLoader::ResourceLoader(DX12& aDx12) :
+	dx12(aDx12)
+{
+}
+
+void ResourceLoader::Update()
 {
 	if (resources.size() == 0)
 		return;
@@ -11,27 +17,32 @@ void ResourceLoader::LoadResources()
 
 	for (IResource* resource : resources)
 	{
-		resource->LoadToGPU();
+		resource->LoadToGPU(dx12);
 	}
 
 	ExitLoad();
+
+	for (IResource* resource : resources)
+	{
+		resource->OnGPULoadComplete();
+	}
 
 	resources.clear();
 }
 
 void ResourceLoader::PrepareLoad()
 {
-	//ThrowIfFailed(myCommandAllocator[myFrameIndex]->Reset());
-	//ThrowIfFailed(myCommandList->Reset(myCommandAllocator[myFrameIndex].Get(), myPipelineState.Get()));
+	ThrowIfFailed(dx12.myCommandAllocator[dx12.myFrameIndex]->Reset());
+	ThrowIfFailed(dx12.myCommandList->Reset(dx12.myCommandAllocator[dx12.myFrameIndex].Get(), dx12.myPipelineState.Get()));
 }
 
 void ResourceLoader::ExitLoad()
 {
-//	ThrowIfFailed(myCommandList->Close());
-//
-//	// Execute the command list
-//	ID3D12CommandList* commandLists[] = { myCommandList.Get() };
-//	myCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
-//
-//	WaitForGpu();
+	ThrowIfFailed(dx12.myCommandList->Close());
+
+	// Execute the command list
+	ID3D12CommandList* commandLists[] = { dx12.myCommandList.Get() };
+	dx12.myCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+
+	dx12.WaitForGPU();
 }

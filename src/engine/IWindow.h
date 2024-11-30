@@ -29,12 +29,12 @@ public:
     IWindow(UINT width, UINT height, std::wstring name);
     virtual ~IWindow();
 
-    virtual void OnInit() = 0;
-    virtual void OnUpdate() = 0;
-    virtual void OnRender() = 0;
+    virtual void OnInit() { __noop; }
+    virtual void OnUpdate() { __noop; }
+    virtual void OnRender() { __noop; }
     virtual void OnBeginFrame() { __noop; }
     virtual void OnEndFrame() { _timer.Update(); }
-    virtual void OnDestroy() = 0;
+    virtual void OnDestroy() { __noop; }
 
     // Samples override the event handlers to handle specific messages
     virtual void OnKeyDown(UINT8 /*key*/)   { __noop; }

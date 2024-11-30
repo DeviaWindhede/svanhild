@@ -1,15 +1,17 @@
 #pragma once
 #include "UploadBuffer.h"
+#include "IResource.h"
 
-class Mesh
+class Mesh : public IResource
 {
 public:
 	Mesh() = default;
 	~Mesh();
 
+	virtual void LoadToGPU(class DX12& aDx12) override;
+	virtual void OnGPULoadComplete() override;
 	void LoadMeshData(const std::vector<Vertex>& aVertices, const std::vector<UINT16>& aIndices);
 	
-	void InitUploadBufferTransfer(ComPtr<ID3D12Device>& aDevice, ComPtr<ID3D12GraphicsCommandList>& aCommandList);
 	void ResetUploadBuffer();
 
 	//FORCEINLINE Vertex* Vertices() const			{ return (Vertex*)data; }
@@ -34,8 +36,6 @@ private:
 
 	D3D12_VERTEX_BUFFER_VIEW vbv;
 	D3D12_INDEX_BUFFER_VIEW ibv;
-
-	ComPtr<ID3D12Resource> uploadHeap;
 
 	//unsigned char* data	= 0;
 	Vertex* vertices = 0;

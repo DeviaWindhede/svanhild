@@ -1,25 +1,20 @@
 #pragma once
 
 #include <vector>
-
-class IResource
-{
-	friend class ResourceLoader;
-public:
-	virtual void LoadToGPU() = 0;
-	virtual void UnloadGPU() = 0;
-protected:
-	
-};
+#include <DX12.h>
 
 class ResourceLoader
 {
 public:
-	void LoadResources();
+	ResourceLoader(DX12& aDx12);
+
+	void Update();
+	void LoadResource(class IResource* aResource) { resources.push_back(aResource); }
 private:
 	void PrepareLoad();
 	void ExitLoad();
 
-	std::vector<IResource*> resources;
+	std::vector<class IResource*> resources;
+	DX12& dx12;
 };
 

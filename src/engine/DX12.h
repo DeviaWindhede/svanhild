@@ -1,6 +1,7 @@
 #pragma once
 #include "DXHelper.h"
 #include <SceneBufferTypes.h>
+#include <queue>
 
 using Microsoft::WRL::ComPtr;
 
@@ -16,15 +17,18 @@ public:
 	void WaitForGPU();
     void MoveToNextFrame();
 
+    UINT ReserveSrvIndex();
+    void ReturnSrvIndex(UINT aIndex);
+
     void GetHardwareAdapter(
         _In_ IDXGIFactory1* pFactory,
         _Outptr_result_maybenull_ IDXGIAdapter1** ppAdapter,
         bool requestHighPerformanceAdapter = false);
 
     static constexpr UINT FrameCount = 2;
-    static constexpr UINT CbvCount = 1;
-    static constexpr UINT SrvCount = 4096;
-    static constexpr UINT UavCount = 0; // TODO: add UAV support
+    static constexpr UINT MAX_CBV_COUNT = 1;
+    static constexpr UINT MAX_SRV_COUNT = 4096;
+    static constexpr UINT MAX_UAV_COUNT = 0; // TODO: add UAV support
 
     // Pipeline objects
     CD3DX12_VIEWPORT myViewport;
@@ -52,10 +56,8 @@ public:
     ComPtr<ID3D12Fence> myFence;
     UINT64 myFenceValues[FrameCount];
 
-    ComPtr<ID3D12Resource> frameBuffer;
-    FrameBuffer frameBufferData = {};
-    UINT8* frameBufferCbvDataBegin = 0;
 private:
+    std::queue<UINT> srvIndices{};
     bool useWarpDevice;
 };
 

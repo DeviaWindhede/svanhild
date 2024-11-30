@@ -5,7 +5,7 @@ struct FrameBuffer
 {
     DirectX::XMMATRIX view;
     DirectX::XMMATRIX projection;
-    DirectX::XMFLOAT2 resolution;
+    DirectX::XMFLOAT2 windowSize;
     DirectX::XMFLOAT2 viewport;
     float nearPlane;
     float farPlane;
