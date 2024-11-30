@@ -34,27 +34,18 @@ public:
 
     virtual void OnInit() override;
     virtual void OnBeginFrame() override;
-    virtual void OnUpdate() override;
-    virtual void OnRender() override;
+    virtual void OnEndFrame() override;
     virtual void OnDestroy() override;
 
     __forceinline void Quit() { PostQuitMessage(0); };
-private:
+protected:
     DX12 dx12;
+    FrameBufferData frameBufferData = {};
+    Camera camera;
     ResourceLoader resourceLoader;
 
-    Camera camera;
-
     ComPtr<ID3D12Resource> frameBuffer;
-    FrameBuffer frameBufferData = {};
     UINT8* frameBufferCbvDataBegin = 0;
 
-
-    void LoadAssets();
-    void PopulateCommandList();
     void UpdateFrameBuffer();
-
-    Mesh myTempMesh;
-    Texture myTempTexture;
-
 };

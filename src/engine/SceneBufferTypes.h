@@ -1,7 +1,7 @@
 #pragma once
 #include "DirectXMath.h"
 
-struct FrameBuffer
+struct FrameBufferData
 {
     DirectX::XMMATRIX view;
     DirectX::XMMATRIX projection;
@@ -14,4 +14,4 @@ struct FrameBuffer
     DirectX::XMFLOAT4 offset;
     float padding[4]; // Padding so the constant buffer is 256-byte aligned.
 };
-static_assert((sizeof(FrameBuffer) % 256) == 0, "Constant Buffer size must be 256-byte aligned");
+static_assert((sizeof(FrameBufferData) % 256) == 0, "Constant Buffer size must be 256-byte aligned");
