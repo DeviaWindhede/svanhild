@@ -40,6 +40,42 @@ void D3D12Window::OnInit()
 // Load the sample assets.
 void D3D12Window::LoadAssets()
 {
+	// Create and record the bundle.
+	{
+		ThrowIfFailed(dx12.myDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_BUNDLE, dx12.myBundleAllocator.Get(), dx12.myPipelineState.Get(), IID_PPV_ARGS(&dx12.myBundle)));
+		dx12.myBundle->SetGraphicsRootSignature(dx12.myRootSignature.Get());
+
+		dx12.myBundle->SetGraphicsRootConstantBufferView(0, dx12.frameBuffer->GetGPUVirtualAddress());
+		dx12.myBundle->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+		dx12.myBundle->IASetVertexBuffers(0, 1, &myTempMesh.VertexBufferView());
+		dx12.myBundle->IASetIndexBuffer(&myTempMesh.IndexBufferView());
+		dx12.myBundle->DrawIndexedInstanced(myTempMesh.VertexCount(), 1, 0, 0, 0);
+		ThrowIfFailed(dx12.myBundle->Close());
+	}
+}
+
+#include "Mesh.h"
+void D3D12Window::LoadMesh(Mesh& aMesh)
+{
+	ThrowIfFailed(dx12.myCommandAllocator[dx12.myFrameIndex]->Reset());
+	ThrowIfFailed(dx12.myCommandList->Reset(dx12.myCommandAllocator[dx12.myFrameIndex].Get(), dx12.myPipelineState.Get()));
+	
+	aMesh.InitUploadBufferTransfer(dx12.myDevice, dx12.myCommandList);
+
+	ThrowIfFailed(dx12.myCommandList->Close());
+
+	// Execute the command list
+	ID3D12CommandList* commandLists[] = { dx12.myCommandList.Get() };
+	dx12.myCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+
+	dx12.WaitForGPU();
+}
+
+void D3D12Window::LoadTexture()
+{
+	ThrowIfFailed(dx12.myCommandAllocator[dx12.myFrameIndex]->Reset());
+	ThrowIfFailed(dx12.myCommandList->Reset(dx12.myCommandAllocator[dx12.myFrameIndex].Get(), dx12.myPipelineState.Get()));
+
 	// Note: ComPtr's are CPU objects but this resource needs to stay in scope until
 	// the command list that references it has finished executing on the GPU.
 	// We will flush the GPU at the end of this method to ensure the resource is not
@@ -121,35 +157,6 @@ void D3D12Window::LoadAssets()
 		}
 	}
 
-	// Close the command list and execute it to begin the initial GPU setup.
-	ThrowIfFailed(dx12.myCommandList->Close());
-	ID3D12CommandList* ppCommandLists[] = { dx12.myCommandList.Get() };
-	dx12.myCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-	dx12.WaitForGPU();
-
-	// Create and record the bundle.
-	{
-		ThrowIfFailed(dx12.myDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_BUNDLE, dx12.myBundleAllocator.Get(), dx12.myPipelineState.Get(), IID_PPV_ARGS(&dx12.myBundle)));
-		dx12.myBundle->SetGraphicsRootSignature(dx12.myRootSignature.Get());
-
-		dx12.myBundle->SetGraphicsRootConstantBufferView(0, dx12.frameBuffer->GetGPUVirtualAddress());
-		dx12.myBundle->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		dx12.myBundle->IASetVertexBuffers(0, 1, &myTempMesh.VertexBufferView());
-		dx12.myBundle->IASetIndexBuffer(&myTempMesh.IndexBufferView());
-		dx12.myBundle->DrawIndexedInstanced(myTempMesh.VertexCount(), 1, 0, 0, 0);
-		ThrowIfFailed(dx12.myBundle->Close());
-	}
-
-}
-
-#include "Mesh.h"
-void D3D12Window::LoadMesh(Mesh& aMesh)
-{
-	ThrowIfFailed(dx12.myCommandAllocator[dx12.myFrameIndex]->Reset());
-	ThrowIfFailed(dx12.myCommandList->Reset(dx12.myCommandAllocator[dx12.myFrameIndex].Get(), dx12.myPipelineState.Get()));
-	
-	aMesh.InitUploadBufferTransfer(dx12.myDevice, dx12.myCommandList);
-
 	ThrowIfFailed(dx12.myCommandList->Close());
 
 	// Execute the command list
@@ -157,10 +164,6 @@ void D3D12Window::LoadMesh(Mesh& aMesh)
 	dx12.myCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
 
 	dx12.WaitForGPU();
-}
-
-void D3D12Window::LoadTexture()
-{
 }
 
 // Generate a simple black and white checkerboard texture.
@@ -209,6 +212,8 @@ void D3D12Window::OnUpdate()
 
 		myTempMesh.LoadMeshData(package.meshData[0].vertices, package.meshData[0].indices);
 		LoadMesh(myTempMesh);
+
+		LoadTexture();
 	}
 
 	

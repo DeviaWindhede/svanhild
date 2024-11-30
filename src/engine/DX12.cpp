@@ -415,6 +415,12 @@ void DX12::LoadPipeline()
 
 	// Create the command list.
 	ThrowIfFailed(myDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, myCommandAllocator[myFrameIndex].Get(), myPipelineState.Get(), IID_PPV_ARGS(&myCommandList)));
+
+	// Close the command list and execute it to begin the initial GPU setup.
+	ThrowIfFailed(myCommandList->Close());
+	ID3D12CommandList* ppCommandLists[] = { myCommandList.Get() };
+	myCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+	WaitForGPU();
 }
 
 void DX12::PrepareRender()
