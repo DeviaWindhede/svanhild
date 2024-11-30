@@ -84,6 +84,16 @@ void Texture::OnGPULoadComplete()
 	uploadHeap = nullptr;
 }
 
+void Texture::Bind(DX12& aDx12)
+{
+	if (!GPUInitialized())
+		return;
+
+	D3D12_GPU_DESCRIPTOR_HANDLE handle = aDx12.mySrvHeap->GetGPUDescriptorHandleForHeapStart();
+	handle.ptr += aDx12.myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * SrvIndex();
+	aDx12.myCommandList->SetGraphicsRootDescriptorTable(1, handle);
+}
+
 std::vector<UINT8> Texture::GenerateTextureData()
 {
 	const UINT rowPitch = TextureWidth * TexturePixelSize;

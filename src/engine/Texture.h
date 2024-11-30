@@ -8,6 +8,7 @@ class Texture : public IResource
 public:
 	virtual void LoadToGPU(class DX12& aDx12) override;
     virtual void OnGPULoadComplete() override;
+    void Bind(class DX12& aDx12);
 private:
     static const UINT TextureWidth = 256;
     static const UINT TextureHeight = 256;

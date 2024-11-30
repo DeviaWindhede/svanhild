@@ -234,12 +234,7 @@ void D3D12Window::OnUpdate()
 
 	dx12.myCommandList->SetGraphicsRootConstantBufferView(0, frameBuffer->GetGPUVirtualAddress());
 
-	if (myTempTexture.GPUInitialized())
-	{
-		D3D12_GPU_DESCRIPTOR_HANDLE handle = dx12.mySrvHeap->GetGPUDescriptorHandleForHeapStart();
-		handle.ptr += dx12.myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * myTempTexture.SrvIndex();
-		dx12.myCommandList->SetGraphicsRootDescriptorTable(1, handle);
-	}
+	myTempTexture.Bind(dx12);
 
 	dx12.myCommandList->RSSetViewports(1, &dx12.myViewport);
 	dx12.myCommandList->RSSetScissorRects(1, &dx12.myScissorRect);
