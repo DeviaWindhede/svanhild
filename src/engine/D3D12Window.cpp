@@ -89,7 +89,7 @@ void D3D12Window::LoadAssets()
 // Update frame-based values.
 void D3D12Window::OnUpdate()
 {
-	if (!myTempMesh.InitializedBuffer())
+	if (!myTempMesh.GPUInitialized())
 	{
 		auto package = ModelFactory::LoadMeshFromFBX(StringHelper::ws2s(GetAssetFullPath(L"sm_oneTrueCube.fbx")));
 
@@ -295,8 +295,7 @@ void D3D12Window::OnDestroy()
 
 void D3D12Window::PopulateCommandList()
 {
-
-	if (myTempMesh.InitializedBuffer())
+	if (myTempMesh.GPUInitialized())
 	{
 		dx12.myCommandList->IASetVertexBuffers(0, 1, &myTempMesh.VertexBufferView());
 		dx12.myCommandList->IASetIndexBuffer(&myTempMesh.IndexBufferView());

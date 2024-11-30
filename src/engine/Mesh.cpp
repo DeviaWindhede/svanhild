@@ -5,13 +5,7 @@
 
 Mesh::~Mesh()
 {
-	Reset();
-}
-
-void Mesh::ResetUploadBuffer()
-{
-	//buffer.Reset();
-	//buffer = {};
+	UnloadCPU();
 }
 
 void Mesh::PerformResourceBarrier(
@@ -20,11 +14,9 @@ void Mesh::PerformResourceBarrier(
 	D3D12_RESOURCE_STATES aNewState
 ) const
 {
-	assert(initializedBuffers);
-
 	D3D12_RESOURCE_BARRIER barrier = {};
 	barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	barrier.Transition.pResource = resourceBuffer.Get();
+	barrier.Transition.pResource = resource.Get();
 	barrier.Transition.StateBefore = aPreviousState; // This is the default state for most resources
 	barrier.Transition.StateAfter = aNewState;
 	barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
@@ -32,21 +24,8 @@ void Mesh::PerformResourceBarrier(
 	aCommandList->ResourceBarrier(1, &barrier);
 }
 
-void Mesh::Reset()
-{
-	ResetUploadBuffer();
-	delete[] vertices;
-	vertices = nullptr;
-	delete[] indices;
-	indices = nullptr;
-	//delete[] data;
-	//data = nullptr;
-}
-
 void Mesh::LoadToGPU(class DX12& aDx12)
 {
-	assert(!initializedBuffers && "Trying to initialize buffer multiple times!");
-
 	size_t vertexSize = sizeof(Vertex) * vertexCount;
 	size_t indexSize = sizeof(UINT16) * indexCount;
 	size_t bufferSize = vertexSize + indexSize;
@@ -57,7 +36,7 @@ void Mesh::LoadToGPU(class DX12& aDx12)
 		&keep(CD3DX12_RESOURCE_DESC::Buffer(bufferSize)),
 		D3D12_RESOURCE_STATE_COMMON,
 		nullptr,
-		IID_PPV_ARGS(&resourceBuffer)
+		IID_PPV_ARGS(&resource)
 	);
 
 	{
@@ -96,18 +75,17 @@ void Mesh::LoadToGPU(class DX12& aDx12)
 
 		uploadHeap->Unmap(0, nullptr);
 	}
-	initializedBuffers = true;
 
 	PerformResourceBarrier(aDx12.myCommandList, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
 
-	aDx12.myCommandList->CopyBufferRegion(resourceBuffer.Get(), 0, uploadHeap.Get(), 0, bufferSize);
+	aDx12.myCommandList->CopyBufferRegion(resource.Get(), 0, uploadHeap.Get(), 0, bufferSize);
 
 	PerformResourceBarrier(aDx12.myCommandList, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
 
 	// vertex buffer view
 	{
 		vbv = {};
-		vbv.BufferLocation = resourceBuffer->GetGPUVirtualAddress();
+		vbv.BufferLocation = resource->GetGPUVirtualAddress();
 		vbv.StrideInBytes = sizeof(Vertex);
 		vbv.SizeInBytes = static_cast<UINT>(sizeof(Vertex) * VertexCount());
 	}
@@ -115,7 +93,7 @@ void Mesh::LoadToGPU(class DX12& aDx12)
 	// index buffer view
 	{
 		ibv = {};
-		ibv.BufferLocation = resourceBuffer->GetGPUVirtualAddress() + vbv.SizeInBytes;
+		ibv.BufferLocation = resource->GetGPUVirtualAddress() + vbv.SizeInBytes;
 		ibv.SizeInBytes = static_cast<UINT>(sizeof(UINT16) * IndexCount());
 		ibv.Format = DXGI_FORMAT_R16_UINT; // DXGI_FORMAT_R32_UINT
 	}
@@ -124,7 +102,17 @@ void Mesh::LoadToGPU(class DX12& aDx12)
 void Mesh::OnGPULoadComplete()
 {
 	IResource::OnGPULoadComplete();
-	uploadHeap = nullptr;
+//#ifndef _DEBUG
+	UnloadCPU();
+//#endif
+}
+
+void Mesh::UnloadCPU()
+{
+	delete[] vertices;
+	vertices = nullptr;
+	delete[] indices;
+	indices = nullptr;
 }
 
 void Mesh::LoadMeshData(const std::vector<Vertex>& aVertices, const std::vector<UINT16>& aIndices)
@@ -132,7 +120,7 @@ void Mesh::LoadMeshData(const std::vector<Vertex>& aVertices, const std::vector<
 	//if (data != nullptr)
 	if (vertices != nullptr || indices != nullptr)
 	{
-		Reset();
+		UnloadCPU();
 	}
 
 	vertexCount = aVertices.size();

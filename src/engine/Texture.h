@@ -15,7 +15,5 @@ private:
     static const UINT TexturePixelSize = 4;    // The number of bytes used to represent a pixel in the texture.
 
 	std::vector<UINT8> GenerateTextureData();
-
-    ComPtr<ID3D12Resource> m_texture;
 };
 

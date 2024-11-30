@@ -26,10 +26,10 @@ void Texture::LoadToGPU(DX12& aDx12)
 				&textureDesc,
 				D3D12_RESOURCE_STATE_COPY_DEST,
 				nullptr,
-				IID_PPV_ARGS(&m_texture)));
+				IID_PPV_ARGS(&resource)));
 		}
 
-		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(m_texture.Get(), 0, 1);
+		const UINT64 uploadBufferSize = GetRequiredIntermediateSize(resource.Get(), 0, 1);
 
 		{
 			auto properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
@@ -54,9 +54,9 @@ void Texture::LoadToGPU(DX12& aDx12)
 			textureData.RowPitch = TextureWidth * TexturePixelSize;
 			textureData.SlicePitch = textureData.RowPitch * TextureHeight;
 
-			UpdateSubresources(aDx12.myCommandList.Get(), m_texture.Get(), uploadHeap.Get(), 0, 0, 1, &textureData);
+			UpdateSubresources(aDx12.myCommandList.Get(), resource.Get(), uploadHeap.Get(), 0, 0, 1, &textureData);
 			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-				m_texture.Get(),
+				resource.Get(),
 				D3D12_RESOURCE_STATE_COPY_DEST,
 				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
 			);
@@ -74,7 +74,7 @@ void Texture::LoadToGPU(DX12& aDx12)
 		CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(aDx12.mySrvHeap->GetCPUDescriptorHandleForHeapStart());
 		srvIndex = aDx12.ReserveSrvIndex();
 		srvHandle.Offset(srvIndex, descriptorSize);
-		aDx12.myDevice->CreateShaderResourceView(m_texture.Get(), &srvDesc, srvHandle);
+		aDx12.myDevice->CreateShaderResourceView(resource.Get(), &srvDesc, srvHandle);
 	}
 }
 
