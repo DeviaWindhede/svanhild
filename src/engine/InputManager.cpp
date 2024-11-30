@@ -28,7 +28,7 @@ InputManager::~InputManager()
 
 }
 
-void InputManager::Init()
+void InputManager::LoadPipeline()
 {
 	//myMouse = std::make_unique<DirectX::Mouse>();
 	//myMouse->SetWindow(Engine::GetInstance()->GetWindowHandle());

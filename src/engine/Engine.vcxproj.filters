@@ -59,6 +59,11 @@
     <ClInclude Include="pch.h" />
     <ClInclude Include="UploadBuffer.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Texture.h" />
+    <ClInclude Include="ResourceLoader.h" />
+    <ClInclude Include="GraphicsEngine.h" />
+    <ClInclude Include="DX12.h" />
+    <ClInclude Include="SceneBufferTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApplicationTimer.cpp" />
@@ -90,6 +95,10 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="UploadBuffer.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="ResourceLoader.cpp" />
+    <ClCompile Include="GraphicsEngine.cpp" />
+    <ClCompile Include="DX12.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shader\default.hlsl">

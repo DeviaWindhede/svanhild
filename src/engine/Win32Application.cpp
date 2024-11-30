@@ -61,8 +61,6 @@ int Win32Application::Run(IWindow* pSample, HINSTANCE hInstance, int nCmdShow)
         hInstance,
         pSample);
 
-    InputManager::CreateInstance();
-
     // Initialize the sample. OnInit is defined in each child-implementation of DXSample.
     pSample->OnInit();
 
@@ -81,7 +79,6 @@ int Win32Application::Run(IWindow* pSample, HINSTANCE hInstance, int nCmdShow)
     }
 
     pSample->OnDestroy();
-    InputManager::DestroyInstance();
 
     // Return this part of the WM_QUIT message to Windows.
     return static_cast<char>(msg.wParam);

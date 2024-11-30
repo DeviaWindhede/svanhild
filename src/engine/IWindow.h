@@ -11,12 +11,20 @@
 
 #pragma once
 
+#include <string>
 #include "DXHelper.h"
 #include "Win32Application.h"
 #include "ApplicationTimer.h"
 
 class IWindow
 {
+private:
+    // Root assets path
+    static std::wstring myAssetsPath;
+
+    // Root shader path
+    static std::wstring myEngineShaderPath;
+
 public:
     IWindow(UINT width, UINT height, std::wstring name);
     virtual ~IWindow();
@@ -39,15 +47,9 @@ public:
 
     void ParseCommandLineArgs(_In_reads_(argc) WCHAR* argv[], int argc);
 
+    static std::wstring GetAssetFullPath(LPCWSTR assetName) { return myAssetsPath + assetName; }
+    static std::wstring GetEngineShaderFullPath(LPCWSTR assetName) { return myEngineShaderPath + assetName; }
 protected:
-    std::wstring GetAssetFullPath(LPCWSTR assetName) const;
-    std::wstring GetEngineShaderFullPath(LPCWSTR assetName) const;
-
-    void GetHardwareAdapter(
-        _In_ IDXGIFactory1* pFactory,
-        _Outptr_result_maybenull_ IDXGIAdapter1** ppAdapter,
-        bool requestHighPerformanceAdapter = false);
-
     void SetCustomWindowText(LPCWSTR text);
 
     ApplicationTimer _timer;
@@ -61,12 +63,6 @@ protected:
     bool myUseWarpDevice;
 
 private:
-    // Root assets path
-    std::wstring myAssetsPath;
-
-    // Root shader path
-    std::wstring myEngineShaderPath;
-
     // Window title
     std::wstring myTitle;
 };

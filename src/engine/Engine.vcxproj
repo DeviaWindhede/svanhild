@@ -116,12 +116,17 @@
   <ItemGroup>
     <ClInclude Include="ApplicationTimer.h" />
     <ClInclude Include="D3D12Window.h" />
+    <ClInclude Include="DX12.h" />
     <ClInclude Include="DXHelper.h" />
+    <ClInclude Include="GraphicsEngine.h" />
     <ClInclude Include="IWindow.h" />
     <ClInclude Include="InputManager.h" />
     <ClInclude Include="MathDefines.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="ResourceLoader.h" />
+    <ClInclude Include="SceneBufferTypes.h" />
     <ClInclude Include="StringHelper.h" />
+    <ClInclude Include="Texture.h" />
     <ClInclude Include="UploadBuffer.h" />
     <ClInclude Include="Win32Application.h" />
     <ClInclude Include="file\BinaryAnimationFactory.h" />
@@ -141,9 +146,13 @@
   <ItemGroup>
     <ClCompile Include="ApplicationTimer.cpp" />
     <ClCompile Include="D3D12Window.cpp" />
+    <ClCompile Include="DX12.cpp" />
+    <ClCompile Include="GraphicsEngine.cpp" />
     <ClCompile Include="IWindow.cpp" />
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="ResourceLoader.cpp" />
+    <ClCompile Include="Texture.cpp" />
     <ClCompile Include="UploadBuffer.cpp" />
     <ClCompile Include="Win32Application.cpp" />
     <ClCompile Include="file\BinaryAnimationFactory.cpp" />

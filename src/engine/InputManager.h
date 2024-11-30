@@ -32,7 +32,7 @@ public:
 			myInstance = nullptr;
 		}
 	}
-	void Init();
+	void LoadPipeline();
 	bool IsKeyHeld(const int aKeyCode) const { return myCurrentState[aKeyCode] && myPreviousState[aKeyCode]; }
 	bool IsKeyPressed(const int aKeyCode) const { return myCurrentState[aKeyCode] && !myPreviousState[aKeyCode]; }
 	bool IsKeyReleased(const int aKeyCode) const { return !myCurrentState[aKeyCode] && myPreviousState[aKeyCode]; }

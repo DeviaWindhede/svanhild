@@ -51,5 +51,6 @@ PSInput VSMain(VertexInputType Input)
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    return g_texture.Sample(g_sampler, input.uv);
+    return float4(input.uv.x, 0, 0, 1);
+    //return g_texture.Sample(g_sampler, input.uv);
 }
