@@ -13,16 +13,16 @@ void CubePrimitive::InitPrimitive()
         { { size, size, size },      { 0, 0, 1 }, { 0, 1 } },
         { { -size, size, size },     { 0, 0, 1 }, { 1, 1 } },
         // back
-        { { -size, -size, -size },  {}, { 1, 0 } },
-        { { size, -size, -size },   {}, { 0, 0 } },
-        { { size, size, -size },    {}, { 0, 1 } },
-        { { -size, size, -size },   {}, { 1, 1 } },
+        { { -size, -size, -size },  { 0, 0, 0.5f }, { 1, 0 } },
+        { { size, -size, -size },   { 0, 0, 0.5f }, { 0, 0 } },
+        { { size, size, -size },    { 0, 0, 0.5f }, { 0, 1 } },
+        { { -size, size, -size },   { 0, 0, 0.5f }, { 1, 1 } },
 
         // left
-        { { -size, -size, -size },  {}, { 0, 1 } }, // Bottom-left
-        { { -size, -size, size },   {}, { 1, 1 } },  // Bottom-right
-        { { -size, size, size },    {}, { 1, 0 } },   // Top-right
-        { { -size, size, -size },   {}, { 0, 0 } },  // Top-left
+        { { -size, -size, -size },  { 0.5f, 0, 0 }, { 0, 1 } }, // Bottom-left
+        { { -size, -size, size },   { 0.5f, 0, 0 }, { 1, 1 } },  // Bottom-right
+        { { -size, size, size },    { 0.5f, 0, 0 }, { 1, 0 } },   // Top-right
+        { { -size, size, -size },   { 0.5f, 0, 0 }, { 0, 0 } },  // Top-left
 
         // right
         { { size, -size, size },    { 1, 0, 0 }, { 0, 1 } },   // Bottom-left
@@ -37,10 +37,10 @@ void CubePrimitive::InitPrimitive()
         { { -size, size, -size },   { 0, 1, 0 }, { 0, 0 } },  // Top-left
 
         // bottom
-        { { -size, -size, -size },  {}, { 0, 1 } }, // Bottom-left
-        { { size, -size, -size },   {}, { 1, 1 } },  // Bottom-right
-        { { size, -size, size },    {}, { 1, 0 } },   // Top-right
-        { { -size, -size, size },   {}, { 0, 0 } },  // Top-left
+        { { -size, -size, -size },  { 0, 0.5f, 0 }, { 0, 1 } }, // Bottom-left
+        { { size, -size, -size },   { 0, 0.5f, 0 }, { 1, 1 } },  // Bottom-right
+        { { size, -size, size },    { 0, 0.5f, 0 }, { 1, 0 } },   // Top-right
+        { { -size, -size, size },   { 0, 0.5f, 0 }, { 0, 0 } },  // Top-left
     };
 
 	std::vector<UINT16> indices{
