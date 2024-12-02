@@ -7,7 +7,7 @@ class FrameBuffer
 {
 public:
     void Init(class DX12& aDx12);
-    void Update(class DX12& aDx12, class Camera& aCamera);
+    void Update(class DX12& aDx12, class Camera& aCamera, class ApplicationTimer& aTimer);
 
     FrameBufferData frameBufferData = {};
     ComPtr<ID3D12Resource> resource;

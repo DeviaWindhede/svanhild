@@ -9,7 +9,8 @@ cbuffer SceneConstantBuffer : register(b0)
     float2 g_padding;
     float4x4 testTransform; // world to clip
     float4 offset;
-    float4 padding[4];
+    float time;
+    float4 padding[3];
 };
 
 struct VertexInputType
@@ -26,12 +27,12 @@ struct PSInput
 {
     float4 position : SV_POSITION;
     float2 uv : TEXCOORD;
+    float4 color : COLOR;
 };
 //#include "common.hlsli"
 
 
 Texture2D g_texture : register(t0);
-Texture2D g_texture1 : register(t1);
 SamplerState g_sampler : register(s0);
 
 PSInput VSMain(VertexInputType Input)
@@ -45,12 +46,18 @@ PSInput VSMain(VertexInputType Input)
     
     result.position = vertexProjectionPosition;
     result.uv = Input.uv;
+    result.color = float4(time, 0, 0, 0);
 
     return result;
 }
 
 float4 PSMain(PSInput input) : SV_TARGET
 {
-    //return float4(input.uv.x, 0, 0, 1);
+    //return float4(input.uv.xy, 0, 1);
+    //return g_texture.Sample(g_sampler, float2(0, 0));
+    float2 uv = float2(0, 0);
+    uv.x = cos(input.color.x);
+    uv.y = sin(input.color.x);
+    //return g_texture.Sample(g_sampler, uv);
     return g_texture.Sample(g_sampler, input.uv);
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include <D3D12Window.h>
 #include "Mesh.h"
+#include "CubePrimitive.h"
 #include "Texture.h"
 
 class GameWindow : public D3D12Window
@@ -13,7 +14,7 @@ public:
 	virtual void OnRender() override;
 
 private:
-	Mesh myTempMesh;
+	CubePrimitive myTempMesh;
 	Texture myTempTexture;
 };
 

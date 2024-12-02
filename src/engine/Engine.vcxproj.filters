@@ -67,6 +67,7 @@
     <ClInclude Include="IResource.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="FrameBuffer.h" />
+    <ClInclude Include="CubePrimitive.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApplicationTimer.cpp" />
@@ -104,6 +105,7 @@
     <ClCompile Include="DX12.cpp" />
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
+    <ClCompile Include="CubePrimitive.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shader\default.hlsl">

@@ -116,6 +116,7 @@
   <ItemGroup>
     <ClInclude Include="ApplicationTimer.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CubePrimitive.h" />
     <ClInclude Include="D3D12Window.h" />
     <ClInclude Include="DX12.h" />
     <ClInclude Include="DXHelper.h" />
@@ -149,6 +150,7 @@
   <ItemGroup>
     <ClCompile Include="ApplicationTimer.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CubePrimitive.cpp" />
     <ClCompile Include="D3D12Window.cpp" />
     <ClCompile Include="DX12.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />

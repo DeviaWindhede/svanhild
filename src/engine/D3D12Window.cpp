@@ -35,7 +35,7 @@ void D3D12Window::OnInit()
 void D3D12Window::OnBeginFrame()
 {
 	resourceLoader.Update();
-	frameBuffer.Update(dx12, camera);
+	frameBuffer.Update(dx12, camera, _timer);
 
 
 	// Command list allocators can only be reset when the associated 

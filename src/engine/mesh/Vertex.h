@@ -10,6 +10,7 @@ struct Vertex
 	Vector3f normal;
 	Vector3f binormal;
 	Vector3f tangent;
+	float padding[2];
 };
 
 struct AnimatedVertex : public Vertex

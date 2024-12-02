@@ -2,6 +2,7 @@
 #include "GameWindow.h"
 #include "DX12.h"
 #include <InputManager.h>
+#include "CubePrimitive.h"
 #include <mesh/ModelFactory.h>
 #include <StringHelper.h>
 
@@ -32,9 +33,11 @@ void GameWindow::OnUpdate()
 
 	if (!myTempMesh.GPUInitialized())
 	{
-		auto package = ModelFactory::LoadMeshFromFBX(StringHelper::ws2s(GetAssetFullPath(L"sm_oneTrueCube.fbx")));
+		//auto package = ModelFactory::LoadMeshFromFBX(StringHelper::ws2s(GetAssetFullPath(L"TGE.fbx")));
+		//auto package = ModelFactory::LoadMeshFromFBX(StringHelper::ws2s(GetAssetFullPath(L"sm_oneTrueCube.fbx")));
 
-		myTempMesh.LoadMeshData(package.meshData[0].vertices, package.meshData[0].indices);
+		//myTempMesh.LoadMeshData(package.meshData[0].vertices, package.meshData[0].indices);
+		myTempMesh.InitPrimitive();
 		resourceLoader.LoadResource(&myTempMesh);
 		resourceLoader.LoadResource(&myTempTexture);
 	}

@@ -11,6 +11,7 @@ struct FrameBufferData
     float padding0[4];
     DirectX::XMMATRIX testTransform;
     DirectX::XMFLOAT4 offset;
-    float padding[4]; // Padding so the constant buffer is 256-byte aligned.
+    float time;
+    float padding[3]; // Padding so the constant buffer is 256-byte aligned.
 };
 static_assert((sizeof(FrameBufferData) % 256) == 0, "Constant Buffer size must be 256-byte aligned");

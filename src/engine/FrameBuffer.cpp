@@ -2,6 +2,7 @@
 #include "FrameBuffer.h"
 #include "DX12.h"
 #include "Camera.h"
+#include "ApplicationTimer.h"
 
 void FrameBuffer::Init(class DX12& aDx12)
 {
@@ -28,13 +29,14 @@ void FrameBuffer::Init(class DX12& aDx12)
 	memcpy(frameBufferCbvDataBegin, &frameBufferData, sizeof(frameBufferData));
 }
 
-void FrameBuffer::Update(class DX12& aDx12, Camera& aCamera)
+void FrameBuffer::Update(class DX12& aDx12, Camera& aCamera, ApplicationTimer& aTimer)
 {
 	frameBufferData.projection = aCamera.Projection();
 	frameBufferData.view = aCamera.View();
 	frameBufferData.nearPlane = aCamera.nearPlane;
 	frameBufferData.farPlane = aCamera.farPlane;
 	frameBufferData.viewport = DirectX::XMFLOAT2(static_cast<float>(aDx12.myViewport.Width), static_cast<float>(aDx12.myViewport.Height));
+	frameBufferData.time = aTimer.GetTotalTime();
 
 	memcpy(frameBufferCbvDataBegin, &frameBufferData, sizeof(frameBufferData));
 }
