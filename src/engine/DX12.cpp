@@ -92,6 +92,8 @@ void DX12::GetHardwareAdapter(
 	*ppAdapter = adapter.Detach();
 }
 
+#define ENABLE_GPU_VALIDATION 1
+
 void DX12::LoadPipeline()
 {
 	UINT dxgiFactoryFlags = 0;
@@ -108,6 +110,13 @@ void DX12::LoadPipeline()
 			// Enable additional debug layers.
 			dxgiFactoryFlags |= DXGI_CREATE_FACTORY_DEBUG;
 		}
+
+#if ENABLE_GPU_VALIDATION
+		Microsoft::WRL::ComPtr<ID3D12Debug1> debugController1;
+		if (SUCCEEDED(debugController.As(&debugController1))) {
+			debugController1->SetEnableGPUBasedValidation(TRUE);
+		}
+#endif
 	}
 #endif
 
@@ -330,6 +339,33 @@ void DX12::LoadPipeline()
 		myDevice->CreateDepthStencilView(myDepthBuffer.Get(), &dsvDesc, myDsvHeap->GetCPUDescriptorHandleForHeapStart());
 	}
 
+	// Instance buffer
+	{
+		D3D12_HEAP_PROPERTIES defaultHeapProps = { D3D12_HEAP_TYPE_DEFAULT };
+		D3D12_RESOURCE_DESC instanceBufferDesc = CD3DX12_RESOURCE_DESC::Buffer(INSTANCE_BUFFER_SIZE);
+
+		myDevice->CreateCommittedResource(
+			&defaultHeapProps,
+			D3D12_HEAP_FLAG_NONE,
+			&instanceBufferDesc,
+			D3D12_RESOURCE_STATE_COMMON,
+			nullptr,
+			IID_PPV_ARGS(&instanceBuffer)
+		);
+
+		D3D12_HEAP_PROPERTIES uploadHeapProps = { D3D12_HEAP_TYPE_UPLOAD };
+
+		myDevice->CreateCommittedResource(
+			&uploadHeapProps,
+			D3D12_HEAP_FLAG_NONE,
+			&instanceBufferDesc,
+			D3D12_RESOURCE_STATE_GENERIC_READ,
+			nullptr,
+			IID_PPV_ARGS(&instanceUploadBuffer)
+		);
+	}
+
+	// PSO
 	{
 		ComPtr<ID3DBlob> vertexShader;
 		ComPtr<ID3DBlob> pixelShader;
@@ -352,6 +388,9 @@ void DX12::LoadPipeline()
 			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT,   0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 			{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 			{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT,  0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+			{ "WORLD",  0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
+			{ "WORLD",  1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
+			{ "WORLD",  2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 }
 		};
 
 		// Describe and create the graphics pipeline state object (PSO).

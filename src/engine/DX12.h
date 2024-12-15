@@ -29,7 +29,7 @@ public:
     static constexpr UINT MAX_CBV_COUNT = 1;
     static constexpr UINT MAX_SRV_COUNT = 4096;
     static constexpr UINT MAX_UAV_COUNT = 0; // TODO: add UAV support
-
+    static constexpr UINT INSTANCE_BUFFER_SIZE = 4096;
     // Pipeline objects
     CD3DX12_VIEWPORT myViewport;
     CD3DX12_RECT myScissorRect;
@@ -37,6 +37,8 @@ public:
     ComPtr<ID3D12Device> myDevice;
     ComPtr<ID3D12Resource> myRenderTargets[FrameCount];
     ComPtr<ID3D12Resource> myDepthBuffer;
+    ComPtr<ID3D12Resource> instanceBuffer;
+    ComPtr<ID3D12Resource> instanceUploadBuffer;
     ComPtr<ID3D12CommandAllocator> myCommandAllocator[FrameCount];
     ComPtr<ID3D12CommandAllocator> myBundleAllocator;
     ComPtr<ID3D12CommandQueue> myCommandQueue;

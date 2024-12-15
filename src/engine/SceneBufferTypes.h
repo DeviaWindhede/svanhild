@@ -1,6 +1,40 @@
 #pragma once
 #include "DirectXMath.h"
 
+struct GPUTransform
+{
+	GPUTransform() : data(
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0
+	)
+	{}
+
+	GPUTransform(const DirectX::XMMATRIX& aMatrix) : data(
+		aMatrix.r[0].m128_f32[0], aMatrix.r[1].m128_f32[0], aMatrix.r[2].m128_f32[0], aMatrix.r[3].m128_f32[0],
+		aMatrix.r[0].m128_f32[1], aMatrix.r[1].m128_f32[1], aMatrix.r[2].m128_f32[1], aMatrix.r[3].m128_f32[1],
+		aMatrix.r[0].m128_f32[2], aMatrix.r[1].m128_f32[2], aMatrix.r[2].m128_f32[2], aMatrix.r[3].m128_f32[2]
+	) {}
+
+	GPUTransform operator=(DirectX::XMMATRIX&& aMatrix)
+	{
+		data = GetDataFromMatrix(aMatrix);
+		return *this;
+	}
+
+	DirectX::XMFLOAT4X3 GetDataFromMatrix(const DirectX::XMMATRIX& aMatrix)
+	{
+		return DirectX::XMFLOAT4X3(
+			aMatrix.r[0].m128_f32[0], aMatrix.r[1].m128_f32[0], aMatrix.r[2].m128_f32[0], aMatrix.r[3].m128_f32[0],
+			aMatrix.r[0].m128_f32[1], aMatrix.r[1].m128_f32[1], aMatrix.r[2].m128_f32[1], aMatrix.r[3].m128_f32[1],
+			aMatrix.r[0].m128_f32[2], aMatrix.r[1].m128_f32[2], aMatrix.r[2].m128_f32[2], aMatrix.r[3].m128_f32[2]
+		);
+	}
+
+	DirectX::XMFLOAT4X3 data;
+};
+
+
 struct FrameBufferData
 {
     DirectX::XMMATRIX view;
@@ -9,7 +43,8 @@ struct FrameBufferData
     float nearPlane;
     float farPlane;
     float padding0[4];
-    DirectX::XMMATRIX testTransform;
+    GPUTransform testTransform;
+    DirectX::XMFLOAT4 temp;
     DirectX::XMFLOAT4 offset;
     float time;
     float padding[3]; // Padding so the constant buffer is 256-byte aligned.

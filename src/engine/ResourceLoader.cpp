@@ -22,6 +22,14 @@ void ResourceLoader::Update()
 
 	ExitLoad();
 
+	for (size_t i = 0; i < resources.size(); i++)
+	{
+		IResource* resource = resources[i];
+		resource->OnGPULoadComplete();
+		if (activeCallbacks.contains(i))
+			std::any_cast<OnLoadedCallback>(activeCallbacks[i])(resource);
+	}
+
 	for (IResource* resource : resources)
 	{
 		resource->OnGPULoadComplete();

@@ -3,6 +3,13 @@
 #include "Mesh.h"
 #include "CubePrimitive.h"
 #include "Texture.h"
+#include <vector>
+
+struct TempMeshCollection
+{
+	Mesh* mesh;
+	std::vector<GPUTransform> instances;
+};
 
 class GameWindow : public D3D12Window
 {
@@ -14,7 +21,7 @@ public:
 	virtual void OnRender() override;
 
 private:
-	CubePrimitive myTempMesh;
+	std::vector<TempMeshCollection> meshes;
 	Texture myTempTexture;
 };
 

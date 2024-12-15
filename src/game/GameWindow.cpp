@@ -5,6 +5,7 @@
 #include "CubePrimitive.h"
 #include <mesh/ModelFactory.h>
 #include <StringHelper.h>
+#include <iostream>
 
 GameWindow::GameWindow(UINT width, UINT height, std::wstring name) : D3D12Window(width, height, name)
 {
@@ -14,32 +15,49 @@ void GameWindow::OnInit()
 {
 	D3D12Window::OnInit();
 
-	// Create and record the bundle.
-	{
-		ThrowIfFailed(dx12.myDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_BUNDLE, dx12.myBundleAllocator.Get(), dx12.myPipelineState.Get(), IID_PPV_ARGS(&dx12.myBundle)));
-		dx12.myBundle->SetGraphicsRootSignature(dx12.myRootSignature.Get());
+	meshes.push_back({});
+	meshes[0].mesh = new CubePrimitive();
+	((CubePrimitive*)meshes[0].mesh)->InitPrimitive();
 
-		dx12.myBundle->SetGraphicsRootConstantBufferView(0, frameBuffer.resource->GetGPUVirtualAddress());
-		dx12.myBundle->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-		dx12.myBundle->IASetVertexBuffers(0, 1, &myTempMesh.VertexBufferView());
-		dx12.myBundle->IASetIndexBuffer(&myTempMesh.IndexBufferView());
-		dx12.myBundle->DrawIndexedInstanced(myTempMesh.VertexCount(), 1, 0, 0, 0);
-		ThrowIfFailed(dx12.myBundle->Close());
+	// Create and record the bundle.
+	//{
+	//	ThrowIfFailed(dx12.myDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_BUNDLE, dx12.myBundleAllocator.Get(), dx12.myPipelineState.Get(), IID_PPV_ARGS(&dx12.myBundle)));
+	//	dx12.myBundle->SetGraphicsRootSignature(dx12.myRootSignature.Get());
+
+	//	dx12.myBundle->SetGraphicsRootConstantBufferView(0, frameBuffer.resource->GetGPUVirtualAddress());
+	//	dx12.myBundle->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+	//	dx12.myBundle->IASetVertexBuffers(0, 1, &myTempMesh.VertexBufferView());
+	//	dx12.myBundle->IASetIndexBuffer(&myTempMesh.IndexBufferView());
+	//	dx12.myBundle->DrawIndexedInstanced(myTempMesh.VertexCount(), 1, 0, 0, 0);
+	//	ThrowIfFailed(dx12.myBundle->Close());
+	//}
+
+	for (size_t i = 0; i < 3; i++)
+	{
+		auto S = DirectX::XMMatrixScaling(1.0f, 1.0f, 1.0f);
+		auto R = DirectX::XMMatrixRotationY(0);
+		auto T = DirectX::XMMatrixTranslation(-10.0f + i * 10.0f, 0.0f, 10.0f);
+
+		meshes[0].instances.push_back(S * R * T);
 	}
 }
 
 void GameWindow::OnUpdate()
 {
-
-	if (!myTempMesh.GPUInitialized())
+	if (!myTempTexture.GPUInitialized())
 	{
-		//auto package = ModelFactory::LoadMeshFromFBX(StringHelper::ws2s(GetAssetFullPath(L"TGE.fbx")));
-		//auto package = ModelFactory::LoadMeshFromFBX(StringHelper::ws2s(GetAssetFullPath(L"sm_oneTrueCube.fbx")));
+		resourceLoader.LoadResource(&myTempTexture, [&](IResource* aResource) {
+			std::cout << &aResource << " loaded" << std::endl;
+			//((Texture*)aResource)->Bind(dx12);
+		});
+	}
 
-		//myTempMesh.LoadMeshData(package.meshData[0].vertices, package.meshData[0].indices);
-		myTempMesh.InitPrimitive();
-		resourceLoader.LoadResource(&myTempMesh);
-		resourceLoader.LoadResource(&myTempTexture);
+	for (size_t i = 0; i < meshes.size(); i++)
+	{
+		if (!meshes[i].mesh->GPUInitialized())
+		{
+			resourceLoader.LoadResource(meshes[i].mesh);
+		}
 	}
 
 	const float translationSpeed = 0.005f;
@@ -145,12 +163,12 @@ void GameWindow::OnUpdate()
 	}
 
 	{
-		auto S = DirectX::XMMatrixScaling(1.0f, 1.0f, 1.0f);
+		auto S = DirectX::XMMatrixScaling(10.0f, 10.0f, 1.0f);
 		//auto R = DirectX::XMMatrixRotationY(std::sin(_timer.GetTotalTime()));
 		auto R = DirectX::XMMatrixRotationY(0);
 		auto T = DirectX::XMMatrixTranslation(0, 0, 10);
-		frameBuffer.frameBufferData.testTransform = S * R * T;
-
+		auto final = S * R * T;
+		frameBuffer.frameBufferData.testTransform = final;
 		frameBuffer.frameBufferData.offset.x += translationSpeed;
 		if (frameBuffer.frameBufferData.offset.x > offsetBounds)
 		{
@@ -161,68 +179,58 @@ void GameWindow::OnUpdate()
 
 void GameWindow::OnRender()
 {
-	if (myTempMesh.GPUInitialized())
-	{
+	if (myTempTexture.GPUInitialized())
 		myTempTexture.Bind(dx12);
-		dx12.myCommandList->IASetVertexBuffers(0, 1, &myTempMesh.VertexBufferView());
-		dx12.myCommandList->IASetIndexBuffer(&myTempMesh.IndexBufferView());
-		//dx12.myCommandList->DrawInstanced(myTempMesh.VertexCount(), 1, 0, 0);
 
-		{
-			size_t vertexCount = myTempMesh.VertexCount();    // Number of vertices
-			size_t indexCount = myTempMesh.IndexCount();     // Number of indices
+	if (meshes.size() == 0)
+		return;
 
-			// StartIndexLocation is the number of vertices, since the index buffer starts right after the vertex buffer
-			UINT startIndexLocation = static_cast<UINT>(vertexCount);
+	void* mappedUploadBuffer = nullptr;
+	dx12.instanceUploadBuffer->Map(0, nullptr, &mappedUploadBuffer);
+	for (size_t meshIndex = 0; meshIndex < meshes.size(); ++meshIndex)
+	{
+		if (!meshes[meshIndex].mesh->GPUInitialized())
+			continue;
 
-			//dx12.myCommandList->DrawIndexedInstanced(
-			//	indexCount,             // Number of indices
-			//	1,                      // Number of instances
-			//	0,                      // Start vertex location (0 for starting at the beginning of the vertex buffer)
-			//	startIndexLocation,     // Start index location (the index from where to start drawing)
-			//	0                       // Start instance location (0 for no instance offset)
-			//);
-			dx12.myCommandList->DrawIndexedInstanced(
-				indexCount,             // Number of indices
-				1,                      // Number of instances
-				0,                      // Start vertex location (typically 0)
-				0,                      // Start index location (typically 0)
-				0                       // Start instance location (typically 0)
-			);
-		}
+		D3D12_VERTEX_BUFFER_VIEW instanceBufferView = {};
+		instanceBufferView.BufferLocation = dx12.instanceBuffer->GetGPUVirtualAddress();
+		instanceBufferView.SizeInBytes = sizeof(GPUTransform) * meshes[meshIndex].instances.size();
+		instanceBufferView.StrideInBytes = sizeof(GPUTransform);
+
+		memcpy(mappedUploadBuffer, meshes[meshIndex].instances.data(), sizeof(GPUTransform) * meshes[meshIndex].instances.size());
+
+		dx12.myCommandList->CopyBufferRegion(
+			dx12.instanceBuffer.Get(),			// Destination (GPU buffer)
+			0,									// Destination offset
+			dx12.instanceUploadBuffer.Get(),	// Source (CPU staging buffer)
+			0,									// Source offset
+			dx12.INSTANCE_BUFFER_SIZE			// Size of data to copy
+		);
+
+		D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+			dx12.instanceBuffer.Get(),
+			D3D12_RESOURCE_STATE_COPY_DEST,
+			D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER
+		);
+		dx12.myCommandList->ResourceBarrier(1, &barrier);
+
+		dx12.myCommandList->IASetVertexBuffers(0, 1, &meshes[meshIndex].mesh->VertexBufferView());
+		dx12.myCommandList->IASetIndexBuffer(&meshes[meshIndex].mesh->IndexBufferView());
+		dx12.myCommandList->IASetVertexBuffers(1, 1, &instanceBufferView);
+
+		dx12.myCommandList->DrawIndexedInstanced(
+			meshes[meshIndex].mesh->IndexCount(),
+			meshes[meshIndex].instances.size(),
+			0, 0, 0
+		);
+
+		barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+			dx12.instanceBuffer.Get(),
+			D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
+			D3D12_RESOURCE_STATE_COPY_DEST
+		);
+		dx12.myCommandList->ResourceBarrier(1, &barrier);
 	}
+	dx12.instanceUploadBuffer->Unmap(0, nullptr);
 }
 
-//void GameWindow::OnRender()
-//{
-//	// Execute the commands stored in the bundle.
-//	//dx12.myCommandList->ExecuteBundle(dx12.myBundle.Get());
-//
-//	dx12.myCommandList->IASetVertexBuffers(0, 1, &myTempMesh.VertexBufferView());
-//	dx12.myCommandList->IASetIndexBuffer(&myTempMesh.IndexBufferView());
-//	//dx12.myCommandList->DrawInstanced(myTempMesh.VertexCount(), 1, 0, 0);
-//
-//	{
-//		size_t vertexCount = myTempMesh.VertexCount();    // Number of vertices
-//		size_t indexCount = myTempMesh.IndexCount();     // Number of indices
-//
-//		// StartIndexLocation is the number of vertices, since the index buffer starts right after the vertex buffer
-//		UINT startIndexLocation = static_cast<UINT>(vertexCount);
-//
-//		//dx12.myCommandList->DrawIndexedInstanced(
-//		//	indexCount,             // Number of indices
-//		//	1,                      // Number of instances
-//		//	0,                      // Start vertex location (0 for starting at the beginning of the vertex buffer)
-//		//	startIndexLocation,     // Start index location (the index from where to start drawing)
-//		//	0                       // Start instance location (0 for no instance offset)
-//		//);
-//		dx12.myCommandList->DrawIndexedInstanced(
-//			indexCount,             // Number of indices
-//			1,                      // Number of instances
-//			0,                      // Start vertex location (typically 0)
-//			0,                      // Start index location (typically 0)
-//			0                       // Start instance location (typically 0)
-//		);
-//	}
-//
-//}
