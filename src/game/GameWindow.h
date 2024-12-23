@@ -4,6 +4,7 @@
 #include "CubePrimitive.h"
 #include "Texture.h"
 #include <vector>
+#include <array>
 
 struct TempMeshCollection
 {
@@ -22,6 +23,7 @@ public:
 
 private:
 	std::vector<TempMeshCollection> meshes;
-	Texture myTempTexture;
+	std::vector<Texture*> textures;
+	std::array<UINT, 8> boundTextures{ UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX };
 };
 

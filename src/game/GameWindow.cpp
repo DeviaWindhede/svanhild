@@ -44,11 +44,13 @@ void GameWindow::OnInit()
 
 void GameWindow::OnUpdate()
 {
-	if (!myTempTexture.GPUInitialized())
+	if (textures.size() == 0)
 	{
-		resourceLoader.LoadResource(&myTempTexture, [&](IResource* aResource) {
+		resourceLoader.LoadResource<Texture>(new Texture(), [&](Texture* aResource) {
 			std::cout << &aResource << " loaded" << std::endl;
+			textures.push_back(aResource);
 			//((Texture*)aResource)->Bind(dx12);
+			// TODO: Wait for root signature to be bound before first callback
 		});
 	}
 
@@ -56,7 +58,7 @@ void GameWindow::OnUpdate()
 	{
 		if (!meshes[i].mesh->GPUInitialized())
 		{
-			resourceLoader.LoadResource(meshes[i].mesh);
+			resourceLoader.LoadResource<Mesh>(meshes[i].mesh);
 		}
 	}
 
@@ -131,6 +133,23 @@ void GameWindow::OnUpdate()
 			}
 
 
+			if (im->IsKeyPressed(VK_F1))
+				dx12.frameBuffer.frameBufferData.renderPass = 0;
+			if (im->IsKeyPressed(VK_F2))
+				dx12.frameBuffer.frameBufferData.renderPass = 1;
+			if (im->IsKeyPressed(VK_F3))
+				dx12.frameBuffer.frameBufferData.renderPass = 2;
+			if (im->IsKeyPressed(VK_F4))
+				dx12.frameBuffer.frameBufferData.renderPass = 3;
+			if (im->IsKeyPressed(VK_F5))
+				dx12.frameBuffer.frameBufferData.renderPass = 4;
+			if (im->IsKeyPressed(VK_F6))
+				dx12.frameBuffer.frameBufferData.renderPass = 5;
+			if (im->IsKeyPressed(VK_F7))
+				dx12.frameBuffer.frameBufferData.renderPass = 6;
+			if (im->IsKeyPressed(VK_F8))
+				dx12.frameBuffer.frameBufferData.renderPass = 7;
+
 
 			Vector3f right = camera.Right();
 			Vector3f up = camera.Up();
@@ -161,26 +180,22 @@ void GameWindow::OnUpdate()
 			};
 		}
 	}
-
-	{
-		auto S = DirectX::XMMatrixScaling(10.0f, 10.0f, 1.0f);
-		//auto R = DirectX::XMMatrixRotationY(std::sin(_timer.GetTotalTime()));
-		auto R = DirectX::XMMatrixRotationY(0);
-		auto T = DirectX::XMMatrixTranslation(0, 0, 10);
-		auto final = S * R * T;
-		frameBuffer.frameBufferData.testTransform = final;
-		frameBuffer.frameBufferData.offset.x += translationSpeed;
-		if (frameBuffer.frameBufferData.offset.x > offsetBounds)
-		{
-			frameBuffer.frameBufferData.offset.x = -offsetBounds;
-		}
-	}
 }
 
 void GameWindow::OnRender()
 {
-	if (myTempTexture.GPUInitialized())
-		myTempTexture.Bind(dx12);
+	if (textures.size() > 0 && textures[0]->GPUInitialized())
+	{
+		for (UINT i = 0; i < textures.size(); ++i) {
+			if (boundTextures[i] == textures[i]->Index())
+				continue;
+
+			if (!textures[i]->Bind(i, dx12))
+				continue;
+
+			boundTextures[i] = textures[i]->Index();
+		}
+	}
 
 	if (meshes.size() == 0)
 		return;

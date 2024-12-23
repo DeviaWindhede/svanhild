@@ -2,6 +2,11 @@
 #include "Texture.h"
 #include "DX12.h"
 
+Texture::~Texture()
+{
+
+}
+
 void Texture::LoadToGPU(DX12& aDx12)
 {
 	// Create the texture.
@@ -70,28 +75,37 @@ void Texture::LoadToGPU(DX12& aDx12)
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MipLevels = 1;
 
-		const UINT descriptorSize = aDx12.myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(aDx12.mySrvHeap->GetCPUDescriptorHandleForHeapStart());
-		srvIndex = aDx12.ReserveSrvIndex();
-		srvHandle.Offset(srvIndex, descriptorSize);
-		aDx12.myDevice->CreateShaderResourceView(resource.Get(), &srvDesc, srvHandle);
+		descriptorHandle = aDx12.mySrvStagingHeap.GetNewHeapHandle();
+
+		aDx12.myDevice->CreateShaderResourceView(resource.Get(), &srvDesc, descriptorHandle.cpuHandle);
 	}
 }
 
-void Texture::OnGPULoadComplete()
+void Texture::OnGPULoadComplete(class DX12& aDx12)
 {
-	IResource::OnGPULoadComplete();
+	IResource::OnGPULoadComplete(aDx12);
 	uploadHeap = nullptr;
 }
 
-void Texture::Bind(DX12& aDx12)
+void Texture::UnloadCPU(DX12& aDx12)
+{
+	aDx12.mySrvStagingHeap.FreeHeapHandle(descriptorHandle);
+}
+
+bool Texture::Bind(UINT aSlot, DX12& aDx12)
 {
 	if (!GPUInitialized())
-		return;
+		return false;
 
-	D3D12_GPU_DESCRIPTOR_HANDLE handle = aDx12.mySrvHeap->GetGPUDescriptorHandleForHeapStart();
-	handle.ptr += aDx12.myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV) * SrvIndex();
-	aDx12.myCommandList->SetGraphicsRootDescriptorTable(1, handle);
+	D3D12_CPU_DESCRIPTOR_HANDLE srcHandle = descriptorHandle.cpuHandle;
+	D3D12_CPU_DESCRIPTOR_HANDLE destHandle = aDx12.mySrvHeap.cpuStart;
+
+	UINT descriptorSize = aDx12.myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	destHandle.ptr = aDx12.mySrvHeap.cpuStart.ptr + aSlot * descriptorSize;
+
+	aDx12.myDevice->CopyDescriptorsSimple(1, destHandle, srcHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+
+	return true;
 }
 
 std::vector<UINT8> Texture::GenerateTextureData()

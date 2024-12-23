@@ -1,7 +1,8 @@
 #pragma once
 #include "DXHelper.h"
 #include <SceneBufferTypes.h>
-#include <queue>
+#include "StagingDescriptorHeap.h"
+#include <FrameBuffer.h>
 
 using Microsoft::WRL::ComPtr;
 
@@ -17,9 +18,6 @@ public:
 	void WaitForGPU();
     void MoveToNextFrame();
 
-    UINT ReserveSrvIndex();
-    void ReturnSrvIndex(UINT aIndex);
-
     void GetHardwareAdapter(
         _In_ IDXGIFactory1* pFactory,
         _Outptr_result_maybenull_ IDXGIAdapter1** ppAdapter,
@@ -29,6 +27,7 @@ public:
     static constexpr UINT MAX_CBV_COUNT = 1;
     static constexpr UINT MAX_SRV_COUNT = 4096;
     static constexpr UINT MAX_UAV_COUNT = 0; // TODO: add UAV support
+    static constexpr UINT MAX_BOUND_SRV_COUNT = 8;
     static constexpr UINT INSTANCE_BUFFER_SIZE = 4096;
     // Pipeline objects
     CD3DX12_VIEWPORT myViewport;
@@ -45,11 +44,13 @@ public:
     ComPtr<ID3D12RootSignature> myRootSignature;
     ComPtr<ID3D12DescriptorHeap> myRtvHeap;
     ComPtr<ID3D12DescriptorHeap> myCbvHeap;
-    ComPtr<ID3D12DescriptorHeap> mySrvHeap;
+    DescriptorHeap mySrvHeap;
+    StagingDescriptorHeap mySrvStagingHeap;
     ComPtr<ID3D12DescriptorHeap> myDsvHeap;
     ComPtr<ID3D12PipelineState> myPipelineState;
     ComPtr<ID3D12GraphicsCommandList> myCommandList;
     ComPtr<ID3D12GraphicsCommandList> myBundle;
+    FrameBuffer frameBuffer;
     UINT myRtvDescriptorSize;
 
     // Synchronization objects
@@ -59,7 +60,6 @@ public:
     UINT64 myFenceValues[FrameCount];
 
 private:
-    std::queue<UINT> srvIndices{};
     bool useWarpDevice;
 };
 

@@ -13,10 +13,6 @@ DX12::DX12(UINT aWidth, UINT aHeight, bool aUseWarpDevice) :
 	myFenceEvent{},
 	useWarpDevice(aUseWarpDevice)
 {
-	for (UINT i = 0; i < MAX_SRV_COUNT; i++)
-	{
-		srvIndices.push(i);
-	}
 }
 
 DX12::~DX12()
@@ -191,6 +187,7 @@ void DX12::LoadPipeline()
 			rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
 			rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
 			ThrowIfFailed(myDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&myRtvHeap)));
+			myRtvDescriptorSize = myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
 			// Describe and create a constant buffer view (CBV) descriptor heap.
 			// Flags indicate that this descriptor heap can be bound to the pipeline 
@@ -201,16 +198,30 @@ void DX12::LoadPipeline()
 			cbvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
 			ThrowIfFailed(myDevice->CreateDescriptorHeap(&cbvHeapDesc, IID_PPV_ARGS(&myCbvHeap)));
 
-			myRtvDescriptorSize = myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+			mySrvHeap.Init(myDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_BOUND_SRV_COUNT, true);
+			mySrvHeap.descriptorHeap->SetName(L"SRV_Heap");
+			mySrvStagingHeap.Init(myDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_SRV_COUNT, false);
+			mySrvHeap.descriptorHeap->SetName(L"SRV_Heap_Staging");
 
-			D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
-			srvHeapDesc.NumDescriptors = MAX_SRV_COUNT;
-			srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-			srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-			ThrowIfFailed(myDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mySrvHeap)));
-
-			myRtvDescriptorSize = myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+			//// SRV Staging Heap
+			//{
+			//	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
+			//	srvHeapDesc.NumDescriptors = MAX_SRV_COUNT;
+			//	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+			//	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+			//	ThrowIfFailed(myDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mySrvStagingHeap)));
+			//}
+			//// SRV Heap
+			//{
+			//	D3D12_DESCRIPTOR_HEAP_DESC srvHeapDesc = {};
+			//	srvHeapDesc.NumDescriptors = MAX_BOUND_SRV_COUNT;
+			//	srvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
+			//	srvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
+			//	ThrowIfFailed(myDevice->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&mySrvHeap)));
+			//}
 		}
+
+		frameBuffer.Init(*this);
 	}
 
 	// Create frame resources.
@@ -247,7 +258,8 @@ void DX12::LoadPipeline()
 		}
 
 		CD3DX12_DESCRIPTOR_RANGE1 ranges[1]{ {} };
-		ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_SRV_COUNT, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+		ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_BOUND_SRV_COUNT, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+		//ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_BOUND_SRV_COUNT, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 		//ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 
 		CD3DX12_ROOT_PARAMETER1 rootParameters[2]{ {}, {} };
@@ -436,7 +448,7 @@ void DX12::LoadPipeline()
 
 	// Create the command list.
 	ThrowIfFailed(myDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, myCommandAllocator[myFrameIndex].Get(), myPipelineState.Get(), IID_PPV_ARGS(&myCommandList)));
-
+	myCommandList->SetName(L"Main_CommandList");
 
 	// SRV
 	{
@@ -448,12 +460,18 @@ void DX12::LoadPipeline()
 		nullSrvDesc.Texture2D.MipLevels = 0;
 
 		const UINT descriptorSize = myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(mySrvHeap->GetCPUDescriptorHandleForHeapStart());
+		CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(mySrvHeap.cpuStart);
+		CD3DX12_CPU_DESCRIPTOR_HANDLE srvStagingHandle(mySrvStagingHeap.cpuStart);
 		ID3D12Resource* nullResource = nullptr;
 		for (UINT n = 0; n < MAX_SRV_COUNT; n++)
 		{
-			myDevice->CreateShaderResourceView(nullResource, &nullSrvDesc, srvHandle);
-			srvHandle.Offset(1, descriptorSize);
+			if (n < MAX_BOUND_SRV_COUNT)
+			{
+				myDevice->CreateShaderResourceView(nullResource, &nullSrvDesc, srvHandle);
+				srvHandle.Offset(1, descriptorSize);
+			}
+			myDevice->CreateShaderResourceView(nullResource, &nullSrvDesc, srvStagingHandle);
+			srvStagingHandle.Offset(1, descriptorSize);
 		}
 	}
 
@@ -513,18 +531,4 @@ void DX12::MoveToNextFrame()
 
 	// Set the fence value for the next frame.
 	myFenceValues[myFrameIndex] = currentFenceValue + 1;
-}
-
-UINT DX12::ReserveSrvIndex()
-{
-	assert(srvIndices.size() > 0);
-	UINT index = srvIndices.front();
-	srvIndices.pop();
-	return index;
-}
-
-void DX12::ReturnSrvIndex(UINT aIndex)
-{
-	assert(srvIndices.size() < MAX_SRV_COUNT);
-	srvIndices.push(aIndex);
 }

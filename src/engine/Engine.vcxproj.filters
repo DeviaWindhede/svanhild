@@ -68,6 +68,9 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="CubePrimitive.h" />
+    <ClInclude Include="StagingDescriptorHeap.h" />
+    <ClInclude Include="DescriptorHeap.h" />
+    <ClInclude Include="DescriptorHeapHandle.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApplicationTimer.cpp" />
@@ -106,6 +109,9 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="CubePrimitive.cpp" />
+    <ClCompile Include="StagingDescriptorHeap.cpp" />
+    <ClCompile Include="DescriptorHeap.cpp" />
+    <ClCompile Include="DescriptorHeapHandle.cpp" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="shader\default.hlsl">

@@ -29,13 +29,12 @@ void D3D12Window::OnInit()
 	InputManager::CreateInstance();
 
 	dx12.LoadPipeline();
-	frameBuffer.Init(dx12);
 }
 
 void D3D12Window::OnBeginFrame()
 {
 	resourceLoader.Update();
-	frameBuffer.Update(dx12, camera, _timer);
+	dx12.frameBuffer.Update(dx12, camera, _timer);
 
 
 	// Command list allocators can only be reset when the associated 
@@ -51,10 +50,13 @@ void D3D12Window::OnBeginFrame()
 	// Set necessary state.
 	dx12.myCommandList->SetGraphicsRootSignature(dx12.myRootSignature.Get());
 
-	ID3D12DescriptorHeap* ppHeaps[] = { dx12.mySrvHeap.Get() };
+	ID3D12DescriptorHeap* ppHeaps[] = { dx12.mySrvHeap.descriptorHeap };
 	dx12.myCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
-	dx12.myCommandList->SetGraphicsRootConstantBufferView(0, frameBuffer.resource->GetGPUVirtualAddress());
+	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = dx12.mySrvHeap.gpuStart;
+	dx12.myCommandList->SetGraphicsRootDescriptorTable(1, gpuHandle);
+
+	dx12.myCommandList->SetGraphicsRootConstantBufferView(0, dx12.frameBuffer.resource->GetGPUVirtualAddress());
 
 
 	dx12.myCommandList->RSSetViewports(1, &dx12.myViewport);

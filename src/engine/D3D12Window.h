@@ -32,7 +32,6 @@ public:
     __forceinline void Quit() { PostQuitMessage(0); };
 protected:
     DX12 dx12;
-    FrameBuffer frameBuffer;
     Camera camera;
     ResourceLoader resourceLoader;
 

@@ -5,7 +5,15 @@
 
 Mesh::~Mesh()
 {
-	UnloadCPU();
+	Internal_UnloadCPU();
+}
+
+void Mesh::Internal_UnloadCPU()
+{
+	delete[] vertices;
+	vertices = nullptr;
+	delete[] indices;
+	indices = nullptr;
 }
 
 void Mesh::PerformResourceBarrier(
@@ -99,20 +107,17 @@ void Mesh::LoadToGPU(class DX12& aDx12)
 	}
 }
 
-void Mesh::OnGPULoadComplete()
+void Mesh::OnGPULoadComplete(class DX12& aDx12)
 {
-	IResource::OnGPULoadComplete();
+	IResource::OnGPULoadComplete(aDx12);
 //#ifndef _DEBUG
-	UnloadCPU();
+	UnloadCPU(aDx12);
 //#endif
 }
 
-void Mesh::UnloadCPU()
+void Mesh::UnloadCPU(class DX12&)
 {
-	delete[] vertices;
-	vertices = nullptr;
-	delete[] indices;
-	indices = nullptr;
+	Internal_UnloadCPU();
 }
 
 void Mesh::LoadMeshData(const std::vector<Vertex>& aVertices, const std::vector<UINT16>& aIndices)
@@ -120,7 +125,7 @@ void Mesh::LoadMeshData(const std::vector<Vertex>& aVertices, const std::vector<
 	//if (data != nullptr)
 	if (vertices != nullptr || indices != nullptr)
 	{
-		UnloadCPU();
+		Internal_UnloadCPU();
 	}
 
 	vertexCount = aVertices.size();

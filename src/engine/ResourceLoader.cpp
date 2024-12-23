@@ -8,34 +8,52 @@ ResourceLoader::ResourceLoader(DX12& aDx12) :
 {
 }
 
+ResourceLoader::~ResourceLoader()
+{
+	for (IResource* resource : activeResources)
+	{
+		resource->UnloadGPU(dx12);
+		resource->UnloadCPU(dx12);
+		delete resource;
+	}
+	activeResources.clear();
+}
+
 void ResourceLoader::Update()
 {
-	if (resources.size() == 0)
+	OnLoadedCallback<class Texture>::Callback ccc = [&](class Texture*) {};
+	OnLoadedCallback<class Texture> c(ccc);
+
+	if (resourcesToLoad.size() == 0)
 		return;
 
 	PrepareLoad();
 
-	for (IResource* resource : resources)
+	for (PendingResource& resource : resourcesToLoad)
 	{
-		resource->LoadToGPU(dx12);
+		resource.resource->LoadToGPU(dx12);
 	}
 
 	ExitLoad();
-
-	for (size_t i = 0; i < resources.size(); i++)
+	
+	for (PendingResource& pending : resourcesToLoad)
 	{
-		IResource* resource = resources[i];
-		resource->OnGPULoadComplete();
-		if (activeCallbacks.contains(i))
-			std::any_cast<OnLoadedCallback>(activeCallbacks[i])(resource);
+		IResource* resource = pending.resource;
+		resource->resourceIndex = resourceCounter++;
+		resource->OnGPULoadComplete(dx12);
+
+		activeResources.push_back(resource);
+
+		if (pending.callback)
+		{
+			pending.callback->execute(resource);
+			delete pending.callback;
+			pending.callback = nullptr;
+		}
+			//pending.callback(resource);
 	}
 
-	for (IResource* resource : resources)
-	{
-		resource->OnGPULoadComplete();
-	}
-
-	resources.clear();
+	resourcesToLoad.clear();
 }
 
 void ResourceLoader::PrepareLoad()
