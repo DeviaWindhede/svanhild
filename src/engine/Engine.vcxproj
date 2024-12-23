@@ -118,10 +118,10 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CubePrimitive.h" />
     <ClInclude Include="D3D12Window.h" />
-    <ClInclude Include="DescriptorHeap.h" />
-    <ClInclude Include="DescriptorHeapHandle.h" />
     <ClInclude Include="DX12.h" />
     <ClInclude Include="DXHelper.h" />
+    <ClInclude Include="DescriptorHeap.h" />
+    <ClInclude Include="DescriptorHeapHandle.h" />
     <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="GraphicsEngine.h" />
     <ClInclude Include="IResource.h" />
@@ -131,6 +131,7 @@
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="ResourceLoader.h" />
     <ClInclude Include="SceneBufferTypes.h" />
+    <ClInclude Include="ShaderCompiler.h" />
     <ClInclude Include="StagingDescriptorHeap.h" />
     <ClInclude Include="StringHelper.h" />
     <ClInclude Include="Texture.h" />
@@ -155,15 +156,16 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CubePrimitive.cpp" />
     <ClCompile Include="D3D12Window.cpp" />
+    <ClCompile Include="DX12.cpp" />
     <ClCompile Include="DescriptorHeap.cpp" />
     <ClCompile Include="DescriptorHeapHandle.cpp" />
-    <ClCompile Include="DX12.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="GraphicsEngine.cpp" />
     <ClCompile Include="IWindow.cpp" />
     <ClCompile Include="InputManager.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="ResourceLoader.cpp" />
+    <ClCompile Include="ShaderCompiler.cpp" />
     <ClCompile Include="StagingDescriptorHeap.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="UploadBuffer.cpp" />
@@ -180,9 +182,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="shader\default.hlsl">
-      <ExcludedFromBuild>true</ExcludedFromBuild>
-      <ObjectFileOutput>C:\Users\Devia\source\repos\svanhild\content\shaders\default.cso</ObjectFileOutput>
+    <FxCompile Include="shader\default_PS.hlsl">
+      <ShaderType>Pixel</ShaderType>
+      <ObjectFileOutput>C:\Users\Devia\Documents\GitHub\svanhild\content\shaders\default_PS.cso</ObjectFileOutput>
+    </FxCompile>
+    <FxCompile Include="shader\default_VS.hlsl">
+      <ShaderType>Vertex</ShaderType>
+      <ObjectFileOutput>C:\Users\Devia\Documents\GitHub\svanhild\content\shaders\default_VS.cso</ObjectFileOutput>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

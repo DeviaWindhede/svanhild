@@ -1,15 +1,15 @@
+#define MAX_BOUND_SRV_COUNT 8
+
 cbuffer SceneConstantBuffer : register(b0)
 {
     float4x4 g_view; // mesh to world (inverse view)
     float4x4 g_projection; // world to clip
-    float2 g_resolution;
     float2 g_viewport;
     float g_nearPlane;
     float g_farPlane;
-    float2 g_padding;
-    float4x4 testTransform; // world to clip
-    float4 offset;
-    float4 padding[4];
+    float g_time;
+    uint g_renderPass;
+    float g_padding[23]; // Padding so the constant buffer is 256-byte aligned.
 };
 
 struct VertexInputType
@@ -20,10 +20,13 @@ struct VertexInputType
     float3 normal : NORMAL;
     float3 binormal : BINORMAL;
     float3 tangent : TANGENT;
+    float4x3 instanceTransform : WORLD;
 };
 
 struct PSInput
 {
     float4 position : SV_POSITION;
     float2 uv : TEXCOORD;
+    float4 color : COLOR;
+    uint temp : WHATEVER;
 };

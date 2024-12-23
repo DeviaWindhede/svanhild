@@ -3,6 +3,7 @@
 
 #include "DXHelper.h"
 #include <IWindow.h>
+#include <ShaderCompiler.h>
 
 DX12::DX12(UINT aWidth, UINT aHeight, bool aUseWarpDevice) :
 	myFrameIndex(0),
@@ -382,15 +383,9 @@ void DX12::LoadPipeline()
 		ComPtr<ID3DBlob> vertexShader;
 		ComPtr<ID3DBlob> pixelShader;
 
-#if defined(_DEBUG)
-		// Enable better shader debugging with the graphics debugging tools.
-		UINT compileFlags = D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION;
-#else
-		UINT compileFlags = 0;
-#endif
-		ThrowIfFailed(D3DCompileFromFile(IWindow::GetEngineShaderFullPath(L"default.hlsl").c_str(), nullptr, nullptr, "VSMain", "vs_5_0", compileFlags, 0, &vertexShader, nullptr));
-		ThrowIfFailed(D3DCompileFromFile(IWindow::GetEngineShaderFullPath(L"default.hlsl").c_str(), nullptr, nullptr, "PSMain", "ps_5_0", compileFlags, 0, &pixelShader, nullptr));
-	
+		ShaderCompiler::Compile(L"default", ShaderType::Vertex, vertexShader);
+		ShaderCompiler::Compile(L"default", ShaderType::Pixel, pixelShader);
+
 		// Define the vertex input layout.
 		D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
 		{

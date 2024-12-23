@@ -13,12 +13,27 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ApplicationTimer.h" />
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="CubePrimitive.h" />
     <ClInclude Include="D3D12Window.h" />
+    <ClInclude Include="DX12.h" />
     <ClInclude Include="DXHelper.h" />
+    <ClInclude Include="DescriptorHeap.h" />
+    <ClInclude Include="DescriptorHeapHandle.h" />
+    <ClInclude Include="FrameBuffer.h" />
+    <ClInclude Include="GraphicsEngine.h" />
+    <ClInclude Include="IResource.h" />
     <ClInclude Include="IWindow.h" />
     <ClInclude Include="InputManager.h" />
     <ClInclude Include="MathDefines.h" />
+    <ClInclude Include="Mesh.h" />
+    <ClInclude Include="ResourceLoader.h" />
+    <ClInclude Include="SceneBufferTypes.h" />
+    <ClInclude Include="ShaderCompiler.h" />
+    <ClInclude Include="StagingDescriptorHeap.h" />
     <ClInclude Include="StringHelper.h" />
+    <ClInclude Include="Texture.h" />
+    <ClInclude Include="UploadBuffer.h" />
     <ClInclude Include="Win32Application.h" />
     <ClInclude Include="file\BinaryAnimationFactory.h">
       <Filter>file</Filter>
@@ -57,26 +72,25 @@
       <Filter>mesh</Filter>
     </ClInclude>
     <ClInclude Include="pch.h" />
-    <ClInclude Include="UploadBuffer.h" />
-    <ClInclude Include="Mesh.h" />
-    <ClInclude Include="Texture.h" />
-    <ClInclude Include="ResourceLoader.h" />
-    <ClInclude Include="GraphicsEngine.h" />
-    <ClInclude Include="DX12.h" />
-    <ClInclude Include="SceneBufferTypes.h" />
-    <ClInclude Include="IResource.h" />
-    <ClInclude Include="Camera.h" />
-    <ClInclude Include="FrameBuffer.h" />
-    <ClInclude Include="CubePrimitive.h" />
-    <ClInclude Include="StagingDescriptorHeap.h" />
-    <ClInclude Include="DescriptorHeap.h" />
-    <ClInclude Include="DescriptorHeapHandle.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApplicationTimer.cpp" />
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CubePrimitive.cpp" />
     <ClCompile Include="D3D12Window.cpp" />
+    <ClCompile Include="DX12.cpp" />
+    <ClCompile Include="DescriptorHeap.cpp" />
+    <ClCompile Include="DescriptorHeapHandle.cpp" />
+    <ClCompile Include="FrameBuffer.cpp" />
+    <ClCompile Include="GraphicsEngine.cpp" />
     <ClCompile Include="IWindow.cpp" />
     <ClCompile Include="InputManager.cpp" />
+    <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="ResourceLoader.cpp" />
+    <ClCompile Include="ShaderCompiler.cpp" />
+    <ClCompile Include="StagingDescriptorHeap.cpp" />
+    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="UploadBuffer.cpp" />
     <ClCompile Include="Win32Application.cpp" />
     <ClCompile Include="file\BinaryAnimationFactory.cpp">
       <Filter>file</Filter>
@@ -100,21 +114,12 @@
       <Filter>mesh</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp" />
-    <ClCompile Include="UploadBuffer.cpp" />
-    <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="Texture.cpp" />
-    <ClCompile Include="ResourceLoader.cpp" />
-    <ClCompile Include="GraphicsEngine.cpp" />
-    <ClCompile Include="DX12.cpp" />
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="FrameBuffer.cpp" />
-    <ClCompile Include="CubePrimitive.cpp" />
-    <ClCompile Include="StagingDescriptorHeap.cpp" />
-    <ClCompile Include="DescriptorHeap.cpp" />
-    <ClCompile Include="DescriptorHeapHandle.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="shader\default.hlsl">
+    <FxCompile Include="shader\default_PS.hlsl">
+      <Filter>shader</Filter>
+    </FxCompile>
+    <FxCompile Include="shader\default_VS.hlsl">
       <Filter>shader</Filter>
     </FxCompile>
   </ItemGroup>
