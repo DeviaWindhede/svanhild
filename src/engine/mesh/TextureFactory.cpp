@@ -3,7 +3,8 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "TextureFactory.h"
 #include <stb/stb_image.h>
-#include <directxtex/DDSTextureLoader.h>
+#include <DDSTextureLoader/DDSTextureLoader12.h>
+//#include <directxtex/DDSTextureLoader.h>
 
 
 

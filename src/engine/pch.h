@@ -24,8 +24,18 @@
 #include <directx/d3dx12.h> // https://github.com/microsoft/DirectX-Headers/tree/main
 #include <d3d12.h>
 #include <dxgi1_6.h>
+#include <tchar.h>
 #include <D3Dcompiler.h>
 #include <DirectXMath.h>
+
+#ifdef _DEBUG
+#define DX12_ENABLE_DEBUG_LAYER
+#endif
+
+#ifdef DX12_ENABLE_DEBUG_LAYER
+#include <dxgidebug.h>
+#pragma comment(lib, "dxguid.lib")
+#endif
 
 #include <string>
 #include <wrl.h>

@@ -1,5 +1,6 @@
 project "Engine"
 	location (dirs.engine)
+	dependson { "include" }
 
 	kind "StaticLib"
 	language "C++"

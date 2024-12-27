@@ -23,6 +23,7 @@ class D3D12Window : public IWindow
 {
 public:
     D3D12Window(UINT width, UINT height, std::wstring name);
+    ~D3D12Window() override;
 
     virtual void OnInit() override;
     virtual void OnBeginFrame() override;
@@ -31,6 +32,11 @@ public:
 
     __forceinline void Quit() { PostQuitMessage(0); };
 protected:
+#if USE_IMGUI
+    static const int APP_NUM_FRAMES_IN_FLIGHT = 3;
+    static const int APP_NUM_BACK_BUFFERS = 3;
+#endif
+    
     DX12 dx12;
     Camera camera;
     ResourceLoader resourceLoader;

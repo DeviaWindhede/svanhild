@@ -1,6 +1,6 @@
 project "Game"
 	location (dirs.game)
-	dependson { "engine" }
+	dependson { "engine", "include" }
 	
 	kind "WindowedApp"
 	language "C++"
@@ -11,7 +11,7 @@ project "Game"
 	targetname("%{prj.name}_%{cfg.buildcfg}")
 	objdir ("%{dirs.temp}/%{prj.name}")
 
-	links { "engine" }
+	links { "engine", "include" }
 
 	pchheader "pch.h"
 	pchsource ("pch.cpp")

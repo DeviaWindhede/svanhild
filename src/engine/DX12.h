@@ -12,6 +12,7 @@ public:
     DX12(UINT aWidth, UINT aHeight, bool aUseWarpDevice);
     ~DX12();
 
+    void Cleanup();
 	void LoadPipeline();
 	void PrepareRender();
 	void ExecuteRender();
@@ -27,7 +28,7 @@ public:
     static constexpr UINT MAX_CBV_COUNT = 1;
     static constexpr UINT MAX_SRV_COUNT = 4096;
     static constexpr UINT MAX_UAV_COUNT = 0; // TODO: add UAV support
-    static constexpr UINT MAX_BOUND_SRV_COUNT = 8;
+    static constexpr UINT MAX_BOUND_SRV_COUNT = 64;
     static constexpr UINT INSTANCE_BUFFER_SIZE = 4096;
     // Pipeline objects
     CD3DX12_VIEWPORT myViewport;

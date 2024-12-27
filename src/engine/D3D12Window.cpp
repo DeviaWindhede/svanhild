@@ -24,11 +24,16 @@ D3D12Window::D3D12Window(UINT width, UINT height, std::wstring name) :
 {
 }
 
+D3D12Window::~D3D12Window()
+{
+}
+
 void D3D12Window::OnInit()
 {
 	InputManager::CreateInstance();
 
 	dx12.LoadPipeline();
+	ImGui_Init(dx12);
 }
 
 void D3D12Window::OnBeginFrame()
@@ -91,6 +96,8 @@ void D3D12Window::OnBeginFrame()
 
 void D3D12Window::OnEndFrame()
 {
+	ImGui_EndFrame(dx12);
+
 	// Indicate that the back buffer will now be used to present.
 	{
 		CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -119,8 +126,6 @@ void D3D12Window::OnDestroy()
 	// Ensure that the GPU is no longer referencing resources that are about to be
 	// cleaned up by the destructor.
 	dx12.WaitForGPU();
-
-	CloseHandle(dx12.myFenceEvent);
 
 	InputManager::DestroyInstance();
 }

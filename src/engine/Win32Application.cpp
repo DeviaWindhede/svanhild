@@ -15,6 +15,8 @@
 #include "IWindow.h"
 #include "InputManager.h"
 #include <iostream>
+#include <imgui/backends/imgui_impl_win32.h>
+#include <imgui/backends/imgui_impl_win32.cpp>
 
 HWND Win32Application::hwnd = nullptr;
 
@@ -87,6 +89,9 @@ int Win32Application::Run(IWindow* pSample, HINSTANCE hInstance, int nCmdShow)
 // Main message handler for the sample.
 LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+        return true;
+
     IWindow* pSample = reinterpret_cast<IWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
     if (InputManager::GetInstance()->UpdateEvents(message, wParam, lParam))

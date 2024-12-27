@@ -12,5 +12,6 @@ workspace "svanhild"
 		"Release"
 	}
 
+	include (dirs.include)
 	include (dirs.engine)
 	include (dirs.game)

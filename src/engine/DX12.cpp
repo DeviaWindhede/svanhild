@@ -18,7 +18,10 @@ DX12::DX12(UINT aWidth, UINT aHeight, bool aUseWarpDevice) :
 
 DX12::~DX12()
 {
-
+	if (myFenceEvent != nullptr && myFence != nullptr) {
+		WaitForGPU();
+	}
+	Cleanup();
 }
 
 // Helper function for acquiring the first available hardware adapter that supports Direct3D 12.
@@ -90,6 +93,30 @@ void DX12::GetHardwareAdapter(
 }
 
 #define ENABLE_GPU_VALIDATION 1
+
+void DX12::Cleanup()
+{
+	WaitForGPU();
+
+	for (UINT i = 0; i < FrameCount; i++)
+	{
+		if (myRenderTargets[i])
+		{
+			myRenderTargets[i] = nullptr;
+		}
+	}
+
+	if (mySwapChain) { mySwapChain->SetFullscreenState(false, nullptr); mySwapChain = nullptr; }
+	for (UINT i = 0; i < FrameCount; i++)
+		if (myCommandAllocator[i]) { myCommandAllocator[i] = nullptr; }
+	if (myCommandQueue) { myCommandQueue = nullptr; }
+	if (myCommandList) { myCommandList = nullptr; }
+	if (myRtvHeap) { myRtvHeap = nullptr; }
+	if (mySrvHeap.descriptorHeap) { mySrvHeap = {}; }
+	if (myFence) { myFence = nullptr; }
+	if (myFenceEvent) { CloseHandle(myFenceEvent); myFenceEvent = nullptr; }
+	if (myDevice) { myDevice = nullptr; }
+}
 
 void DX12::LoadPipeline()
 {

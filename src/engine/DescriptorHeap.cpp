@@ -32,6 +32,9 @@ void DescriptorHeap::Init(ID3D12Device* aDevice, D3D12_DESCRIPTOR_HEAP_TYPE aHea
 
 DescriptorHeap::~DescriptorHeap()
 {
+    if (!descriptorHeap)
+        return;
+
     descriptorHeap->Release();
     descriptorHeap = NULL;
 }
