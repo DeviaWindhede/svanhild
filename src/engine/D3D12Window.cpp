@@ -17,6 +17,11 @@
 #include <algorithm>
 #include <ShaderCompiler.h>
 
+#if USE_IMGUI
+#include <imgui/backends/imgui_impl_win32.h>
+#include <imgui/backends/imgui_impl_win32.cpp>
+#endif
+
 D3D12Window::D3D12Window(UINT width, UINT height, std::wstring name) :
 	IWindow(width, height, name),
 	dx12(width, height, myUseWarpDevice),
@@ -27,6 +32,16 @@ D3D12Window::D3D12Window(UINT width, UINT height, std::wstring name) :
 
 D3D12Window::~D3D12Window()
 {
+}
+
+bool D3D12Window::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+#if USE_IMGUI
+	if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
+		return true;
+#endif
+
+	return IWindow::WndProc(hWnd, message, wParam, lParam);
 }
 
 void D3D12Window::OnInit()

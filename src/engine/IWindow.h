@@ -29,6 +29,7 @@ public:
     IWindow(UINT width, UINT height, std::wstring name);
     virtual ~IWindow();
 
+    virtual bool WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam);
     virtual void OnInit() { __noop; }
     virtual void OnUpdate() { __noop; }
     virtual void OnRender() { __noop; }

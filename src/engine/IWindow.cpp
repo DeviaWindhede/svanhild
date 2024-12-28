@@ -17,6 +17,7 @@
 #include <imgui/backends/imgui_impl_dx12.h>
 #include <imgui/backends/imgui_impl_win32.h>
 #include "DX12.h"
+#include <InputManager.h>
 
 
 // Simple free list based allocator
@@ -107,6 +108,26 @@ IWindow::~IWindow()
 		imguiSrvDescHeap = nullptr;
 	}
 #endif
+}
+
+bool IWindow::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
+{
+	if (InputManager::GetInstance()->UpdateEvents(message, wParam, lParam))
+		return true;
+
+	switch (message)
+	{
+	case WM_PAINT:
+		OnBeginFrame();
+		OnUpdate();
+		OnRender();
+		OnEndFrame();
+
+		InputManager::GetInstance()->Update();
+		return true;
+	}
+
+	return false;
 }
 
 void IWindow::ImGui_Init(DX12&

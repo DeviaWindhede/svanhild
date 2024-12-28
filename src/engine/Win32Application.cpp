@@ -15,8 +15,6 @@
 #include "IWindow.h"
 #include "InputManager.h"
 #include <iostream>
-#include <imgui/backends/imgui_impl_win32.h>
-#include <imgui/backends/imgui_impl_win32.cpp>
 
 HWND Win32Application::hwnd = nullptr;
 
@@ -89,57 +87,24 @@ int Win32Application::Run(IWindow* pSample, HINSTANCE hInstance, int nCmdShow)
 // Main message handler for the sample.
 LRESULT CALLBACK Win32Application::WindowProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
-    if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
-        return true;
-
     IWindow* pSample = reinterpret_cast<IWindow*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
 
-    if (InputManager::GetInstance()->UpdateEvents(message, wParam, lParam))
-	{
-		return 0;
-	}
+    if (pSample && pSample->WndProc(hWnd, message, wParam, lParam))
+        return 0;
 
     switch (message)
     {
-    case WM_CREATE:
+        case WM_CREATE:
         {
             // Save the DXSample* passed in to CreateWindow.
             LPCREATESTRUCT pCreateStruct = reinterpret_cast<LPCREATESTRUCT>(lParam);
             SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pCreateStruct->lpCreateParams));
+            return 0;
         }
-        return 0;
-
-    //case WM_KEYDOWN:
-    //    if (pSample)
-    //    {
-    //        pSample->OnKeyDown(static_cast<UINT8>(wParam));
-    //    }
-    //    return 0;
-
-    //case WM_KEYUP:
-    //    if (pSample)
-    //    {
-    //        pSample->OnKeyUp(static_cast<UINT8>(wParam));
-    //    }
-    //    return 0;
-
-    case WM_PAINT:
-        if (pSample)
-        {
-            pSample->OnBeginFrame();
-            pSample->OnUpdate();
-            pSample->OnRender();
-            pSample->OnEndFrame();
-
-            InputManager::GetInstance()->Update();
-        }
-        return 0;
-
-    case WM_DESTROY:
-        PostQuitMessage(0);
-        return 0;
+        case WM_DESTROY:
+            PostQuitMessage(0);
+            return 0;
     }
-
     // Handle any messages the switch statement didn't.
     return DefWindowProc(hWnd, message, wParam, lParam);
 }

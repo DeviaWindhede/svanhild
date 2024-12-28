@@ -25,6 +25,7 @@ public:
     D3D12Window(UINT width, UINT height, std::wstring name);
     ~D3D12Window() override;
 
+    virtual bool WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) override;
     virtual void OnInit() override;
     virtual void OnBeginFrame() override;
     virtual void OnEndFrame() override;
