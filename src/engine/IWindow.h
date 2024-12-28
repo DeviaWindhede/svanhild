@@ -21,10 +21,8 @@
 class IWindow
 {
 private:
-    // Root assets path
     static std::wstring myAssetsPath;
-
-    // Root shader path
+    static std::wstring myCSOPath;
     static std::wstring myEngineShaderPath;
 
 public:
@@ -49,8 +47,9 @@ public:
 
     void ParseCommandLineArgs(_In_reads_(argc) WCHAR* argv[], int argc);
 
-    static std::wstring GetAssetFullPath(LPCWSTR assetName) { return myAssetsPath + assetName; }
-    static std::wstring GetEngineShaderFullPath(LPCWSTR assetName) { return myEngineShaderPath + assetName; }
+    static std::wstring GetAssetFullPath(const std::wstring& assetName) { return myAssetsPath + assetName; }
+    static std::wstring GetEngineShaderFullPath(const std::wstring& assetName) { return myEngineShaderPath + assetName; }
+    static std::wstring GetCSOPath(const std::wstring& assetName) { return myCSOPath + assetName; }
 protected:
 #if USE_IMGUI
     static const int APP_SRV_HEAP_SIZE = 64;

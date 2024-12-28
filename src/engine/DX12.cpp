@@ -14,6 +14,7 @@ DX12::DX12(UINT aWidth, UINT aHeight, bool aUseWarpDevice) :
 	myFenceEvent{},
 	useWarpDevice(aUseWarpDevice)
 {
+	ShaderCompiler::CreateInstance(*this);
 }
 
 DX12::~DX12()
@@ -21,6 +22,7 @@ DX12::~DX12()
 	if (myFenceEvent != nullptr && myFence != nullptr) {
 		WaitForGPU();
 	}
+	ShaderCompiler::DestroyInstance();
 	Cleanup();
 }
 
@@ -407,46 +409,12 @@ void DX12::LoadPipeline()
 
 	// PSO
 	{
-		ComPtr<ID3DBlob> vertexShader;
-		ComPtr<ID3DBlob> pixelShader;
+		size_t vertexShader = 0;
+		size_t pixelShader = 0;
 
-		ShaderCompiler::Compile(L"default", ShaderType::Vertex, vertexShader);
-		ShaderCompiler::Compile(L"default", ShaderType::Pixel, pixelShader);
-
-		// Define the vertex input layout.
-		D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
-		{
-			{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,  D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT,   0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT,  0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-			{ "WORLD",  0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
-			{ "WORLD",  1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
-			{ "WORLD",  2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 }
-		};
-
-		// Describe and create the graphics pipeline state object (PSO).
-		D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-		psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
-		psoDesc.pRootSignature = myRootSignature.Get();
-		psoDesc.VS = CD3DX12_SHADER_BYTECODE(vertexShader.Get());
-		psoDesc.PS = CD3DX12_SHADER_BYTECODE(pixelShader.Get());
-		psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-		psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-		psoDesc.DepthStencilState.DepthEnable = TRUE;
-		psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-		psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL; // Test: pass if the pixel is closer to the camera
-		psoDesc.DepthStencilState.StencilEnable = FALSE;  // Disable stencil testing
-		psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-		psoDesc.SampleMask = UINT_MAX;
-		psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-		psoDesc.NumRenderTargets = 1;
-		psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-		psoDesc.SampleDesc.Count = 1;
-
-		ThrowIfFailed(myDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&myPipelineState)));
+		ShaderCompiler::CompileShader(L"default", ShaderType::Vertex, vertexShader);
+		ShaderCompiler::CompileShader(L"default", ShaderType::Pixel, pixelShader);
+		ShaderCompiler::CreatePSO(vertexShader, pixelShader);
 	}
 
 	// Create synchronization objects and wait until assets have been uploaded to the GPU.
@@ -469,7 +437,7 @@ void DX12::LoadPipeline()
 	}
 
 	// Create the command list.
-	ThrowIfFailed(myDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, myCommandAllocator[myFrameIndex].Get(), myPipelineState.Get(), IID_PPV_ARGS(&myCommandList)));
+	ThrowIfFailed(myDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, myCommandAllocator[myFrameIndex].Get(), ShaderCompiler::GetPSO(0).state.Get(), IID_PPV_ARGS(&myCommandList)));
 	myCommandList->SetName(L"Main_CommandList");
 
 	// SRV

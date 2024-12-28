@@ -12,13 +12,14 @@ dirs["source"] 			= os.realpath(dirs.root .. "src/")
 dirs["lib_debug"]	= os.realpath(dirs.root .. "lib/debug/")
 dirs["lib_release"]	= os.realpath(dirs.root .. "lib/release/")
 dirs["content"] 	= os.realpath(dirs.root .. "content/")
+dirs["assets"] 	= os.realpath(dirs.bin .. "assets/")
 
 dirs["game"] 			= os.realpath(dirs.source .. "game/")
 
 dirs["include"]		= os.realpath(dirs.root .. "include/")
 dirs["engine"]			= os.realpath(dirs.source .. "engine/")
 
-dirs["shaders"]	=  os.realpath(dirs.content .. "shaders/")
+dirs["shaders"]	=  os.realpath(dirs.assets .. "shaders/")
 
 if not os.isdir (dirs.bin) then
 	os.mkdir (dirs.bin)

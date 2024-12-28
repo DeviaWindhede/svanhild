@@ -184,11 +184,11 @@
   <ItemGroup>
     <FxCompile Include="shader\default_PS.hlsl">
       <ShaderType>Pixel</ShaderType>
-      <ObjectFileOutput>C:\Users\Devia\Documents\GitHub\svanhild\content\shaders\default_PS.cso</ObjectFileOutput>
+      <ObjectFileOutput>C:\Users\Devia\Documents\GitHub\svanhild\bin\assets\shaders\default_PS.cso</ObjectFileOutput>
     </FxCompile>
     <FxCompile Include="shader\default_VS.hlsl">
       <ShaderType>Vertex</ShaderType>
-      <ObjectFileOutput>C:\Users\Devia\Documents\GitHub\svanhild\content\shaders\default_VS.cso</ObjectFileOutput>
+      <ObjectFileOutput>C:\Users\Devia\Documents\GitHub\svanhild\bin\assets\shaders\default_VS.cso</ObjectFileOutput>
     </FxCompile>
   </ItemGroup>
   <ItemGroup>

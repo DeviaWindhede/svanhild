@@ -3,9 +3,11 @@
 #include "DX12.h"
 #include <InputManager.h>
 #include "CubePrimitive.h"
+#include "ShaderCompiler.h"
 #include <mesh/ModelFactory.h>
 #include <StringHelper.h>
 #include <iostream>
+#include "StringHelper.h"
 
 GameWindow::GameWindow(UINT width, UINT height, std::wstring name) : D3D12Window(width, height, name)
 {
@@ -184,6 +186,25 @@ void GameWindow::OnUpdate()
 
 void GameWindow::OnRender()
 {
+#if SHOULD_RECOMPILE_DURING_RUNTIME
+	{
+		std::lock_guard<std::mutex> lock(ShaderCompiler::ShaderAccessMutex());
+		if (ShaderCompiler::GetShadersToRecompile().size() > 0)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(16));
+
+			auto& shaders = ShaderCompiler::GetShadersToRecompile();
+			do
+			{
+				size_t index = shaders.front();
+				shaders.pop();
+				auto& shader = ShaderCompiler::GetShader(index);
+				std::wstring fileName = shader.path;
+				ShaderCompiler::RecompileShader(shader);
+			} while (!shaders.empty());
+		}
+	}
+#endif
 	if (textures.size() > 0 && textures[0]->GPUInitialized())
 	{
 		for (UINT i = 0; i < textures.size(); ++i) {
@@ -232,6 +253,7 @@ void GameWindow::OnRender()
 		dx12.myCommandList->IASetVertexBuffers(0, 1, &meshes[meshIndex].mesh->VertexBufferView());
 		dx12.myCommandList->IASetIndexBuffer(&meshes[meshIndex].mesh->IndexBufferView());
 		dx12.myCommandList->IASetVertexBuffers(1, 1, &instanceBufferView);
+		ShaderCompiler::GetPSO(0).Set(dx12);
 
 		dx12.myCommandList->DrawIndexedInstanced(
 			meshes[meshIndex].mesh->IndexCount(),

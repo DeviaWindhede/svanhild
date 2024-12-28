@@ -73,6 +73,7 @@ using namespace Microsoft::WRL;
 
 std::wstring IWindow::myAssetsPath = L"";
 std::wstring IWindow::myEngineShaderPath = L"";
+std::wstring IWindow::myCSOPath = L"";
 
 IWindow::IWindow(UINT width, UINT height, std::wstring name) :
     myWidth(width),
@@ -87,6 +88,9 @@ IWindow::IWindow(UINT width, UINT height, std::wstring name) :
 
     myEngineShaderPath = assetsPath;
     myEngineShaderPath += L"..\\src\\engine\\shader\\";
+
+	myCSOPath = myAssetsPath;
+	myCSOPath += L"shaders\\";
 
     myAspectRatio = static_cast<float>(width) / static_cast<float>(height);
 }

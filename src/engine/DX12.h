@@ -48,11 +48,11 @@ public:
     DescriptorHeap mySrvHeap;
     StagingDescriptorHeap mySrvStagingHeap;
     ComPtr<ID3D12DescriptorHeap> myDsvHeap;
-    ComPtr<ID3D12PipelineState> myPipelineState;
     ComPtr<ID3D12GraphicsCommandList> myCommandList;
     ComPtr<ID3D12GraphicsCommandList> myBundle;
     FrameBuffer frameBuffer;
     UINT myRtvDescriptorSize;
+    size_t currentPSO;
 
     // Synchronization objects
     UINT myFrameIndex;

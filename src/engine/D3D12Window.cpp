@@ -15,6 +15,7 @@
 
 #include "mesh/Vertex.h"
 #include <algorithm>
+#include <ShaderCompiler.h>
 
 D3D12Window::D3D12Window(UINT width, UINT height, std::wstring name) :
 	IWindow(width, height, name),
@@ -50,7 +51,7 @@ void D3D12Window::OnBeginFrame()
 	// However, when ExecuteCommandList() is called on a particular command 
 	// list, that command list can then be reset at any time and must be before 
 	// re-recording.
-	ThrowIfFailed(dx12.myCommandList->Reset(dx12.myCommandAllocator[dx12.myFrameIndex].Get(), dx12.myPipelineState.Get()));
+	ThrowIfFailed(dx12.myCommandList->Reset(dx12.myCommandAllocator[dx12.myFrameIndex].Get(), ShaderCompiler::GetPSO(dx12.currentPSO).state.Get()));
 
 	// Set necessary state.
 	dx12.myCommandList->SetGraphicsRootSignature(dx12.myRootSignature.Get());

@@ -2,6 +2,7 @@
 #include "ResourceLoader.h"
 #include "IResource.h"
 #include "DXHelper.h"
+#include "ShaderCompiler.h"
 
 ResourceLoader::ResourceLoader(DX12& aDx12) :
 	dx12(aDx12)
@@ -59,7 +60,7 @@ void ResourceLoader::Update()
 void ResourceLoader::PrepareLoad()
 {
 	ThrowIfFailed(dx12.myCommandAllocator[dx12.myFrameIndex]->Reset());
-	ThrowIfFailed(dx12.myCommandList->Reset(dx12.myCommandAllocator[dx12.myFrameIndex].Get(), dx12.myPipelineState.Get()));
+	ThrowIfFailed(dx12.myCommandList->Reset(dx12.myCommandAllocator[dx12.myFrameIndex].Get(), ShaderCompiler::GetPSO(dx12.currentPSO).state.Get()));
 }
 
 void ResourceLoader::ExitLoad()
