@@ -124,9 +124,6 @@ void D3D12Window::OnEndFrame()
 
 void D3D12Window::OnDestroy()
 {
-	// Ensure that the GPU is no longer referencing resources that are about to be
-	// cleaned up by the destructor.
-	dx12.WaitForGPU();
-
+	dx12.Cleanup();
 	InputManager::DestroyInstance();
 }

@@ -26,6 +26,7 @@ PSInput main(VertexInputType Input)
     result.uv = Input.uv;
     result.color = float4(Input.color.rgb, 1);
     result.temp = g_renderPass;
+    result.time = g_time;
     
     return result;
 }

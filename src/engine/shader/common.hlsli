@@ -29,4 +29,5 @@ struct PSInput
     float2 uv : TEXCOORD;
     float4 color : COLOR;
     uint temp : WHATEVER;
+    float time : TIME;
 };

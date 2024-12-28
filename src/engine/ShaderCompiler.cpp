@@ -11,6 +11,8 @@
 #include <chrono>
 
 // Shared resources
+HANDLE hDirectory;
+HANDLE stopEvent;
 std::unordered_set<std::string> filesToWatch;
 std::mutex filesMutex;
 std::atomic<bool> stopMonitoring = false;
@@ -34,7 +36,12 @@ ShaderCompiler::~ShaderCompiler()
 {
 #if SHOULD_RECOMPILE_DURING_RUNTIME
 	stopMonitoring = true;
+	SetEvent(stopEvent);
+
 	if (watcher.joinable()) {
+		if (hDirectory != INVALID_HANDLE_VALUE) {
+			CancelIoEx(hDirectory, NULL);
+		}
 		watcher.join();
 	}
 #endif
@@ -61,7 +68,7 @@ void ShaderCompiler::RemoveFileToWatch(const std::wstring& fileName)
 
 void ShaderCompiler::WatchFiles(const std::wstring& directory)
 {
-	HANDLE hDirectory = CreateFileW(directory.c_str(),
+	hDirectory = CreateFileW(directory.c_str(),
 		FILE_LIST_DIRECTORY,
 		FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
 		NULL,
@@ -74,11 +81,14 @@ void ShaderCompiler::WatchFiles(const std::wstring& directory)
 
 	char buffer[1024];
 	DWORD bytesReturned;
+	OVERLAPPED overlapped = {};
+	overlapped.hEvent = stopEvent;
 
-	while (!stopMonitoring) {
+	while (!stopMonitoring)
+	{
 		if (ReadDirectoryChangesW(hDirectory, buffer, sizeof(buffer), TRUE,
 			FILE_NOTIFY_CHANGE_LAST_WRITE | FILE_NOTIFY_CHANGE_FILE_NAME,
-			&bytesReturned, NULL, NULL))
+			&bytesReturned, &overlapped, NULL))
 		{
 
 			FILE_NOTIFY_INFORMATION* notification = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(buffer);
@@ -118,14 +128,20 @@ void ShaderCompiler::WatchFiles(const std::wstring& directory)
 					reinterpret_cast<BYTE*>(notification) + notification->NextEntryOffset);
 			} while (true);
 		}
-		else {
+		else
+		{
 			std::cerr << "Failed to read directory changes" << std::endl;
 		}
+
+		DWORD waitResult = WaitForSingleObject(stopEvent, INFINITE);
+		if (waitResult == WAIT_OBJECT_0)
+			break;
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(SHADER_POLL_TIME_MS));
 	}
 
 	CloseHandle(hDirectory);
+	CloseHandle(stopEvent);
 }
 #endif
 

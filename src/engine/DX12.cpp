@@ -19,11 +19,6 @@ DX12::DX12(UINT aWidth, UINT aHeight, bool aUseWarpDevice) :
 
 DX12::~DX12()
 {
-	if (myFenceEvent != nullptr && myFence != nullptr) {
-		WaitForGPU();
-	}
-	ShaderCompiler::DestroyInstance();
-	Cleanup();
 }
 
 // Helper function for acquiring the first available hardware adapter that supports Direct3D 12.
@@ -98,7 +93,10 @@ void DX12::GetHardwareAdapter(
 
 void DX12::Cleanup()
 {
-	WaitForGPU();
+	if (myFenceEvent != nullptr && myFence != nullptr) {
+		WaitForGPU();
+	}
+	ShaderCompiler::DestroyInstance();
 
 	for (UINT i = 0; i < FrameCount; i++)
 	{
