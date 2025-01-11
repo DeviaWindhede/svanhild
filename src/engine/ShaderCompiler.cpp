@@ -322,6 +322,9 @@ HRESULT ShaderCompiler::CompileShader_Internal(std::wstring aPath, ShaderType aT
 
 void PipelineState::Set(DX12& aDx12) const
 {
+	//if (aDx12.currentPSO == index)
+	//	return;
+
 	aDx12.myCommandList->SetPipelineState(state.Get());
 	aDx12.currentPSO = index;
 }

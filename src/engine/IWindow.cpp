@@ -115,17 +115,17 @@ bool IWindow::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	if (InputManager::GetInstance()->UpdateEvents(message, wParam, lParam))
 		return true;
 
-	switch (message)
-	{
-	case WM_PAINT:
-		OnBeginFrame();
-		OnUpdate();
-		OnRender();
-		OnEndFrame();
+	//switch (message)
+	//{
+	//case WM_PAINT:
+	//	OnBeginFrame();
+	//	OnUpdate();
+	//	OnRender();
+	//	OnEndFrame();
 
-		InputManager::GetInstance()->Update();
-		return true;
-	}
+	//	InputManager::GetInstance()->Update();
+	//	return true;
+	//}
 
 	return false;
 }
@@ -198,8 +198,8 @@ void IWindow::ImGui_EndFrame(DX12&
 	ImGui::NewFrame();
 
 	// Add ImGui elements
-	ImGui::Begin("Hello, ImGui!");
-	ImGui::Text("This is ImGui with its own descriptor heap.");
+	ImGui::Begin("Data");
+	ImGui::Text(("FPS: " + std::to_string((int)(1.0f / _timer.GetDeltaTime())) + ", " + std::to_string(_timer.GetDeltaTime()) + "ms").c_str());
 	ImGui::End();
 
 	// Render ImGui draw data

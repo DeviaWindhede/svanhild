@@ -76,6 +76,13 @@ int Win32Application::Run(IWindow* pSample, HINSTANCE hInstance, int nCmdShow)
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
+
+        pSample->OnBeginFrame();
+        pSample->OnUpdate();
+        pSample->OnRender();
+        pSample->OnEndFrame();
+
+        InputManager::GetInstance()->Update();
     }
 
     pSample->OnDestroy();

@@ -40,6 +40,13 @@ bool D3D12Window::WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	if (ImGui_ImplWin32_WndProcHandler(hWnd, message, wParam, lParam))
 		return true;
 #endif
+	switch (message)
+	{
+	case WM_SYSCOMMAND:
+		if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
+			return 0;
+		break;
+	}
 
 	return IWindow::WndProc(hWnd, message, wParam, lParam);
 }
@@ -57,15 +64,7 @@ void D3D12Window::OnBeginFrame()
 	resourceLoader.Update();
 	dx12.frameBuffer.Update(dx12, camera, _timer);
 
-
-	// Command list allocators can only be reset when the associated 
-	// command lists have finished execution on the GPU; apps should use 
-	// fences to determine GPU execution progress.
 	ThrowIfFailed(dx12.myCommandAllocator[dx12.myFrameIndex]->Reset());
-
-	// However, when ExecuteCommandList() is called on a particular command 
-	// list, that command list can then be reset at any time and must be before 
-	// re-recording.
 	ThrowIfFailed(dx12.myCommandList->Reset(dx12.myCommandAllocator[dx12.myFrameIndex].Get(), ShaderCompiler::GetPSO(dx12.currentPSO).state.Get()));
 
 	// Set necessary state.
@@ -125,14 +124,7 @@ void D3D12Window::OnEndFrame()
 
 	ThrowIfFailed(dx12.myCommandList->Close());
 
-	// Execute the command list.
-	ID3D12CommandList* ppCommandLists[] = { dx12.myCommandList.Get() };
-	dx12.myCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
-	// Present the frame.
-	ThrowIfFailed(dx12.mySwapChain->Present(1, 0));
-
-	dx12.MoveToNextFrame();
+	dx12.ExecuteRender();
 
 	IWindow::OnEndFrame();
 }

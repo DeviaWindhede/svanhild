@@ -106,6 +106,7 @@ void DX12::Cleanup()
 		}
 	}
 
+	if (mySwapChainWaitableObject != nullptr) { CloseHandle(mySwapChainWaitableObject); }
 	if (mySwapChain) { mySwapChain->SetFullscreenState(false, nullptr); mySwapChain = nullptr; }
 	for (UINT i = 0; i < FrameCount; i++)
 		if (myCommandAllocator[i]) { myCommandAllocator[i] = nullptr; }
@@ -180,13 +181,17 @@ void DX12::LoadPipeline()
 	// Describe and create the swap chain.
 	DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
 	swapChainDesc.BufferCount = FrameCount;
-	swapChainDesc.Width = myViewport.Width;
-	swapChainDesc.Height = myViewport.Height;
+	swapChainDesc.Width = 0;
+	swapChainDesc.Height = 0;
 	swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 	swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 	swapChainDesc.SampleDesc.Count = 1;
+	swapChainDesc.SampleDesc.Quality = 0;
+	swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
 	swapChainDesc.Scaling = DXGI_SCALING_NONE;
+	swapChainDesc.Stereo = FALSE;
+	swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 	//swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
 
 	ComPtr<IDXGISwapChain1> swapChain;
@@ -198,6 +203,8 @@ void DX12::LoadPipeline()
 		nullptr,
 		&swapChain
 	));
+
+	swapChain->SetFullscreenState(FALSE, nullptr);
 
 	// This sample does not support fullscreen transitions.
 	ThrowIfFailed(factory->MakeWindowAssociation(Win32Application::GetHwnd(), DXGI_MWA_NO_ALT_ENTER));
@@ -285,7 +292,7 @@ void DX12::LoadPipeline()
 			featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
 		}
 
-		CD3DX12_DESCRIPTOR_RANGE1 ranges[1]{ {} };
+		CD3DX12_DESCRIPTOR_RANGE1 ranges[1]{};
 		ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_BOUND_SRV_COUNT, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 		//ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_BOUND_SRV_COUNT, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 		//ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
@@ -480,8 +487,9 @@ void DX12::ExecuteRender()
 	ID3D12CommandList* ppCommandLists[] = { myCommandList.Get() };
 	myCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
-	// Present the frame.
-	ThrowIfFailed(mySwapChain->Present(1, 0));
+	HRESULT hr = mySwapChain->Present((UINT)useVSync, DXGI_PRESENT_ALLOW_TEARING);
+	ThrowIfFailed(hr);
+	swapChainOccluded = hr == DXGI_STATUS_OCCLUDED;
 
 	MoveToNextFrame();
 }
@@ -489,15 +497,39 @@ void DX12::ExecuteRender()
 // Wait for pending GPU work to complete.
 void DX12::WaitForGPU()
 {
-	// Schedule a Signal command in the queue.
-	ThrowIfFailed(myCommandQueue->Signal(myFence.Get(), myFenceValues[myFrameIndex]));
+	//ThrowIfFailed(myCommandQueue->Signal(myFence.Get(), ++myFenceValues[myFrameIndex]));
 
-	// Wait until the fence has been processed.
+	//if (myFence->GetCompletedValue() < myFenceValues[myFrameIndex])
+	//{
+	//	ThrowIfFailed(myFence->SetEventOnCompletion(myFenceValues[myFrameIndex], myFenceEvent));
+	//	WaitForSingleObjectEx(myFenceEvent, INFINITE, FALSE);
+	//}
+
+	ThrowIfFailed(myCommandQueue->Signal(myFence.Get(), myFenceValues[myFrameIndex]));
+	
 	ThrowIfFailed(myFence->SetEventOnCompletion(myFenceValues[myFrameIndex], myFenceEvent));
 	WaitForSingleObjectEx(myFenceEvent, INFINITE, FALSE);
-
-	// Increment the fence value for the current frame.
+	
 	myFenceValues[myFrameIndex]++;
+}
+
+void DX12::WaitForNextFrame()
+{
+	UINT nextFrameIndex = myFrameIndex + 1;
+	myFrameIndex = nextFrameIndex;
+
+	HANDLE waitableObjects[] = { mySwapChainWaitableObject, nullptr };
+	DWORD numWaitableObjects = 1;
+
+	UINT64 fenceValue = myFenceValues[myFrameIndex];
+	if (fenceValue != 0) // means no fence was signaled
+	{
+		myFence->SetEventOnCompletion(fenceValue, myFenceEvent);
+		waitableObjects[1] = myFenceEvent;
+		numWaitableObjects = 2;
+	}
+
+	WaitForMultipleObjects(numWaitableObjects, waitableObjects, TRUE, INFINITE);
 }
 
 // Prepare to render the next frame.

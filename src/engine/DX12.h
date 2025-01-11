@@ -2,7 +2,7 @@
 #include "DXHelper.h"
 #include <SceneBufferTypes.h>
 #include "StagingDescriptorHeap.h"
-#include <FrameBuffer.h>
+#include "FrameBuffer.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -17,6 +17,7 @@ public:
 	void PrepareRender();
 	void ExecuteRender();
 	void WaitForGPU();
+    void WaitForNextFrame();
     void MoveToNextFrame();
 
     void GetHardwareAdapter(
@@ -30,6 +31,7 @@ public:
     static constexpr UINT MAX_UAV_COUNT = 0; // TODO: add UAV support
     static constexpr UINT MAX_BOUND_SRV_COUNT = 64;
     static constexpr UINT INSTANCE_BUFFER_SIZE = 4096;
+
     // Pipeline objects
     CD3DX12_VIEWPORT myViewport;
     CD3DX12_RECT myScissorRect;
@@ -50,16 +52,20 @@ public:
     ComPtr<ID3D12DescriptorHeap> myDsvHeap;
     ComPtr<ID3D12GraphicsCommandList> myCommandList;
     ComPtr<ID3D12GraphicsCommandList> myBundle;
+
     FrameBuffer frameBuffer;
+    HANDLE mySwapChainWaitableObject = nullptr;
     UINT myRtvDescriptorSize;
     size_t currentPSO;
+
 
     // Synchronization objects
     UINT myFrameIndex;
     HANDLE myFenceEvent;
     ComPtr<ID3D12Fence> myFence;
     UINT64 myFenceValues[FrameCount];
-
+    bool swapChainOccluded = false;
+    bool useVSync = false;
 private:
     bool useWarpDevice;
 };
