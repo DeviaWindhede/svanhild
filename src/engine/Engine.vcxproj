@@ -127,11 +127,15 @@
     <ClInclude Include="IResource.h" />
     <ClInclude Include="IWindow.h" />
     <ClInclude Include="InputManager.h" />
+    <ClInclude Include="InstanceBuffer.h" />
+    <ClInclude Include="InstanceCollection.h" />
     <ClInclude Include="MathDefines.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Renderer.h" />
     <ClInclude Include="ResourceLoader.h" />
     <ClInclude Include="SceneBufferTypes.h" />
     <ClInclude Include="ShaderCompiler.h" />
+    <ClInclude Include="SpherePrimitive.h" />
     <ClInclude Include="StagingDescriptorHeap.h" />
     <ClInclude Include="StringHelper.h" />
     <ClInclude Include="Texture.h" />
@@ -163,9 +167,13 @@
     <ClCompile Include="GraphicsEngine.cpp" />
     <ClCompile Include="IWindow.cpp" />
     <ClCompile Include="InputManager.cpp" />
+    <ClCompile Include="InstanceBuffer.cpp" />
+    <ClCompile Include="InstanceCollection.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="ResourceLoader.cpp" />
     <ClCompile Include="ShaderCompiler.cpp" />
+    <ClCompile Include="SpherePrimitive.cpp" />
     <ClCompile Include="StagingDescriptorHeap.cpp" />
     <ClCompile Include="Texture.cpp" />
     <ClCompile Include="UploadBuffer.cpp" />
@@ -182,6 +190,10 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="shader\cull_CS.hlsl">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+      <ObjectFileOutput>C:\Users\Devia\Documents\GitHub\svanhild\bin\assets\shaders\cull_CS.cso</ObjectFileOutput>
+    </FxCompile>
     <FxCompile Include="shader\default_PS.hlsl">
       <ShaderType>Pixel</ShaderType>
       <ObjectFileOutput>C:\Users\Devia\Documents\GitHub\svanhild\bin\assets\shaders\default_PS.cso</ObjectFileOutput>

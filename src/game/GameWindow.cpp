@@ -3,6 +3,7 @@
 #include "DX12.h"
 #include <InputManager.h>
 #include "CubePrimitive.h"
+#include "SpherePrimitive.h"
 #include "ShaderCompiler.h"
 #include <mesh/ModelFactory.h>
 #include <StringHelper.h>
@@ -13,13 +14,19 @@ GameWindow::GameWindow(UINT width, UINT height, std::wstring name) : D3D12Window
 {
 }
 
+GameWindow::~GameWindow()
+{
+	meshes.clear();
+}
+
 void GameWindow::OnInit()
 {
 	D3D12Window::OnInit();
 
-	meshes.push_back({});
+	meshes.resize(2);
 	meshes[0].mesh = new CubePrimitive();
 	((CubePrimitive*)meshes[0].mesh)->InitPrimitive();
+
 
 	// Create and record the bundle.
 	//{
@@ -34,14 +41,41 @@ void GameWindow::OnInit()
 	//	ThrowIfFailed(dx12.myBundle->Close());
 	//}
 
-	for (size_t i = 0; i < 3; i++)
+
+	float offset = 5.0f;
+
+	size_t amount = 80;
+	for (size_t z = 0; z < amount; z++)
+		//for (size_t y = 0; y < amount; y++)
+		//for (size_t x = 0; x < amount; x++)
 	{
 		auto S = DirectX::XMMatrixScaling(1.0f, 1.0f, 1.0f);
 		auto R = DirectX::XMMatrixRotationY(0);
-		auto T = DirectX::XMMatrixTranslation(-10.0f + i * 10.0f, 0.0f, 10.0f);
+		auto T = DirectX::XMMatrixTranslation(offset, offset, offset * z + 10.0f);
+		//auto T = DirectX::XMMatrixTranslation(x * offset, y * offset, z * offset + 10.0f );
+		//auto T = DirectX::XMMatrixTranslation(x * offset, y * offset, z * offset);
 
-		meshes[0].instances.push_back(S * R * T);
+		meshes[0].instances.push_back({ S * R * T , meshes[0].mesh->Index() });
 	}
+	meshes[0].buffer.Create(&dx12);
+
+
+	meshes[1].mesh = new SpherePrimitive();
+	((SpherePrimitive*)meshes[1].mesh)->InitPrimitive();
+	for (size_t z = 0; z < amount; z++)
+		//for (size_t y = 0; y < amount; y++)
+		//for (size_t x = 0; x < amount; x++)
+	{
+		auto S = DirectX::XMMatrixScaling(1.0f, 1.0f, 1.0f);
+		auto R = DirectX::XMMatrixRotationY(0);
+		auto T = DirectX::XMMatrixTranslation(offset, offset + 10.0f, offset * z + 10.0f);
+		//auto T = DirectX::XMMatrixTranslation(x * offset, y * offset, z * offset + 10.0f );
+		//auto T = DirectX::XMMatrixTranslation(x * offset, y * offset, z * offset);
+
+		meshes[1].instances.push_back({ S * R * T , meshes[1].mesh->Index() });
+	}
+	meshes[1].buffer.Create(&dx12);
+
 }
 
 void GameWindow::OnUpdate()
@@ -221,38 +255,40 @@ void GameWindow::OnRender()
 	if (meshes.size() == 0)
 		return;
 
-	void* mappedUploadBuffer = nullptr;
-	dx12.instanceUploadBuffer->Map(0, nullptr, &mappedUploadBuffer);
+	//void* mappedUploadBuffer = nullptr;
+	//dx12.instanceUploadBuffer->Map(0, nullptr, &mappedUploadBuffer);
 	for (size_t meshIndex = 0; meshIndex < meshes.size(); ++meshIndex)
 	{
 		if (!meshes[meshIndex].mesh->GPUInitialized())
 			continue;
 
-		D3D12_VERTEX_BUFFER_VIEW instanceBufferView = {};
-		instanceBufferView.BufferLocation = dx12.instanceBuffer->GetGPUVirtualAddress();
-		instanceBufferView.SizeInBytes = sizeof(GPUTransform) * meshes[meshIndex].instances.size();
-		instanceBufferView.StrideInBytes = sizeof(GPUTransform);
+		meshes[meshIndex].buffer.Update(dx12, meshes[meshIndex].instances);
 
-		memcpy(mappedUploadBuffer, meshes[meshIndex].instances.data(), sizeof(GPUTransform) * meshes[meshIndex].instances.size());
+		//D3D12_VERTEX_BUFFER_VIEW instanceBufferView = {};
+		//instanceBufferView.BufferLocation = dx12.instanceBuffer->GetGPUVirtualAddress();
+		//instanceBufferView.SizeInBytes = sizeof(GPUTransform) * meshes[meshIndex].instances.size();
+		//instanceBufferView.StrideInBytes = sizeof(GPUTransform);
 
-		dx12.myCommandList->CopyBufferRegion(
-			dx12.instanceBuffer.Get(),			// Destination (GPU buffer)
-			0,									// Destination offset
-			dx12.instanceUploadBuffer.Get(),	// Source (CPU staging buffer)
-			0,									// Source offset
-			dx12.INSTANCE_BUFFER_SIZE			// Size of data to copy
-		);
+		//memcpy(mappedUploadBuffer, meshes[meshIndex].instances.data(), sizeof(GPUTransform) * meshes[meshIndex].instances.size());
 
-		D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-			dx12.instanceBuffer.Get(),
-			D3D12_RESOURCE_STATE_COPY_DEST,
-			D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER
-		);
-		dx12.myCommandList->ResourceBarrier(1, &barrier);
+		//dx12.myCommandList->CopyBufferRegion(
+		//	dx12.instanceBuffer.Get(),			// Destination (GPU buffer)
+		//	0,									// Destination offset
+		//	dx12.instanceUploadBuffer.Get(),	// Source (CPU staging buffer)
+		//	0,									// Source offset
+		//	dx12.INSTANCE_BUFFER_SIZE			// Size of data to copy
+		//);
+		//D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+		//	dx12.instanceBuffer.Get(),
+		//	D3D12_RESOURCE_STATE_COPY_DEST,
+		//	D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER
+		//);
+		//dx12.myCommandList->ResourceBarrier(1, &barrier);
 
 		dx12.myCommandList->IASetVertexBuffers(0, 1, &meshes[meshIndex].mesh->VertexBufferView());
 		dx12.myCommandList->IASetIndexBuffer(&meshes[meshIndex].mesh->IndexBufferView());
-		dx12.myCommandList->IASetVertexBuffers(1, 1, &instanceBufferView);
+		dx12.myCommandList->IASetVertexBuffers(1, 1, &meshes[meshIndex].buffer.instanceBufferView);
+		//dx12.myCommandList->IASetVertexBuffers(1, 1, &instanceBufferView);
 		ShaderCompiler::GetPSO(0).Set(dx12);
 
 		dx12.myCommandList->DrawIndexedInstanced(
@@ -261,13 +297,15 @@ void GameWindow::OnRender()
 			0, 0, 0
 		);
 
-		barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-			dx12.instanceBuffer.Get(),
-			D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
-			D3D12_RESOURCE_STATE_COPY_DEST
-		);
-		dx12.myCommandList->ResourceBarrier(1, &barrier);
+		meshes[meshIndex].buffer.OnEndFrame(&dx12);
+
+		//barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+		//	dx12.instanceBuffer.Get(),
+		//	D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
+		//	D3D12_RESOURCE_STATE_COPY_DEST
+		//);
+		//dx12.myCommandList->ResourceBarrier(1, &barrier);
 	}
-	dx12.instanceUploadBuffer->Unmap(0, nullptr);
+	//dx12.instanceUploadBuffer->Unmap(0, nullptr);
 }
 

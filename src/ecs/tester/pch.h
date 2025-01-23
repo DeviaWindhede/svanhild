@@ -19,25 +19,9 @@
 #define WIN32_LEAN_AND_MEAN             // Exclude rarely-used stuff from Windows headers.
 #endif
 
-#define _USE_MATH_DEFINES
-
 #include <windows.h>
 
-#include <directx/d3dx12.h> // https://github.com/microsoft/DirectX-Headers/tree/main
-#include <d3d12.h>
-#include <dxgi1_6.h>
 #include <tchar.h>
-#include <D3Dcompiler.h>
-#include <DirectXMath.h>
-
-#ifdef _DEBUG
-#define DX12_ENABLE_DEBUG_LAYER
-#endif
-
-#ifdef DX12_ENABLE_DEBUG_LAYER
-#include <dxgidebug.h>
-#pragma comment(lib, "dxguid.lib")
-#endif
 
 #include <string>
 #include <wrl.h>
@@ -45,7 +29,4 @@
 
 #include <vector>
 #include <stddef.h>
-#include <math.h>
-#include <cmath>
-#include "MathDefines.h"
 

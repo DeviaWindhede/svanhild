@@ -22,6 +22,7 @@ PSInput main(VertexInputType Input)
     float4 vertexViewPosition = mul(g_view, vertexObjectPosition);
     float4 vertexProjectionPosition = mul(g_projection, vertexViewPosition);
     
+    
     result.position = vertexProjectionPosition;
     result.uv = Input.uv;
     result.color = float4(Input.color.rgb, 1);

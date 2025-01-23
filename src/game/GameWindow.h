@@ -3,19 +3,22 @@
 #include "Mesh.h"
 #include "CubePrimitive.h"
 #include "Texture.h"
+#include "InstanceBuffer.h"
 #include <vector>
 #include <array>
 
 struct TempMeshCollection
 {
 	Mesh* mesh;
-	std::vector<GPUTransform> instances;
+	std::vector<InstanceData> instances;
+	InstanceBuffer buffer;
 };
 
 class GameWindow : public D3D12Window
 {
 public:
 	GameWindow(UINT width, UINT height, std::wstring name);
+	~GameWindow();
 
 	virtual void OnInit() override;
 	virtual void OnUpdate() override;

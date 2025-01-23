@@ -25,8 +25,11 @@
     <ClInclude Include="IResource.h" />
     <ClInclude Include="IWindow.h" />
     <ClInclude Include="InputManager.h" />
+    <ClInclude Include="InstanceBuffer.h" />
+    <ClInclude Include="InstanceCollection.h" />
     <ClInclude Include="MathDefines.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Renderer.h" />
     <ClInclude Include="ResourceLoader.h" />
     <ClInclude Include="SceneBufferTypes.h" />
     <ClInclude Include="ShaderCompiler.h" />
@@ -72,6 +75,7 @@
       <Filter>mesh</Filter>
     </ClInclude>
     <ClInclude Include="pch.h" />
+    <ClInclude Include="SpherePrimitive.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ApplicationTimer.cpp" />
@@ -85,7 +89,10 @@
     <ClCompile Include="GraphicsEngine.cpp" />
     <ClCompile Include="IWindow.cpp" />
     <ClCompile Include="InputManager.cpp" />
+    <ClCompile Include="InstanceBuffer.cpp" />
+    <ClCompile Include="InstanceCollection.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="ResourceLoader.cpp" />
     <ClCompile Include="ShaderCompiler.cpp" />
     <ClCompile Include="StagingDescriptorHeap.cpp" />
@@ -114,8 +121,12 @@
       <Filter>mesh</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="SpherePrimitive.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="shader\cull_CS.hlsl">
+      <Filter>shader</Filter>
+    </FxCompile>
     <FxCompile Include="shader\default_PS.hlsl">
       <Filter>shader</Filter>
     </FxCompile>

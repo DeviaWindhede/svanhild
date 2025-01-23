@@ -15,7 +15,7 @@ float4 main(PSInput input) : SV_TARGET
     switch (input.temp)
     {
         case 0:
-            return float4(sin(input.time), 0, 0, 1);
+            //return float4(input.uv.r, input.uv.g, 0, 1);
             return g_texture[0].Sample(g_sampler, input.uv);
         case 1:
             return g_texture[1].Sample(g_sampler, input.uv);

@@ -192,7 +192,6 @@ HRESULT ShaderCompiler::RecompileShader(const Shader& aShader)
 		return hr;
 	}
 
-	instance->dx12.WaitForGPU();
 
 	shader.index = aShader.index;
 	instance->shaders[aShader.index] = shader;
@@ -228,6 +227,7 @@ HRESULT ShaderCompiler::RecompileShader(const Shader& aShader)
 		if (comparison)
 		{
 			PipelineState newPso{};
+			instance->dx12.WaitForGPU();
 			CreatePSO_Internal(newPso, pso.indexVS, pso.indexPS, pso.indexHS, pso.indexGS, pso.indexDS);
 			newPso.index = pso.index;
 			instance->states[pso.index] = newPso;
@@ -326,5 +326,8 @@ void PipelineState::Set(DX12& aDx12) const
 	//	return;
 
 	aDx12.myCommandList->SetPipelineState(state.Get());
-	aDx12.currentPSO = index;
+	if (indexVS < SIZE_T_MAX)
+		aDx12.currentComputePSO = index;
+	else
+		aDx12.currentPSO = index;
 }

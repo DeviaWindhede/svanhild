@@ -57,6 +57,7 @@ public:
     HANDLE mySwapChainWaitableObject = nullptr;
     UINT myRtvDescriptorSize;
     size_t currentPSO;
+    size_t currentComputePSO;
 
 
     // Synchronization objects

@@ -34,6 +34,12 @@ struct GPUTransform
 	DirectX::XMFLOAT4X3 data;
 };
 
+struct InstanceData
+{
+	GPUTransform transform;
+	//DirectX::XMFLOAT4 color;
+	UINT modelIndex;
+};
 
 struct FrameBufferData
 {

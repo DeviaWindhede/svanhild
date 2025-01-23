@@ -154,28 +154,20 @@ inline HRESULT ShaderCompiler::CreatePSO_Internal(PipelineState& outPSO, ShaderI
 		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT,   0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT,  0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "WORLD",  0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
-		{ "WORLD",  1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
-		{ "WORLD",  2, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 }
+		{ "WORLD",  0, DXGI_FORMAT_R32G32B32A32_FLOAT,	1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
+		{ "WORLD",  1, DXGI_FORMAT_R32G32B32A32_FLOAT,	1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
+		{ "WORLD",  2, DXGI_FORMAT_R32G32B32A32_FLOAT,	1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
+		{ "MODEL",  0, DXGI_FORMAT_R32_UINT,			1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 }
 	};
 
 	// TODO: Add custom desc as param
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
-	psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
 	psoDesc.pRootSignature = instance->dx12.myRootSignature.Get();
-	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-	psoDesc.DepthStencilState.DepthEnable = TRUE;
-	psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-	psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL; // Test: pass if the pixel is closer to the camera
-	psoDesc.DepthStencilState.StencilEnable = FALSE;  // Disable stencil testing
-	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-	psoDesc.SampleMask = UINT_MAX;
-	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-	psoDesc.NumRenderTargets = 1;
-	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-	psoDesc.SampleDesc.Count = 1;
 
+	D3D12_COMPUTE_PIPELINE_STATE_DESC computePsoDesc = {};
+	//computePsoDesc.pRootSignature = instance->dx12.myComputeRootSignature.Get();
+
+	bool hasCompute = false;
 	int i = 0;
 	([&] {
 		if (aIndicies == SIZE_T_MAX)
@@ -194,8 +186,9 @@ inline HRESULT ShaderCompiler::CreatePSO_Internal(PipelineState& outPSO, ShaderI
 			outPSO.indexPS = shader.index;
 			break;
 		case ShaderType::Compute:
-			//D3D12_COMPUTE_PIPELINE_STATE_DESC
-			break;
+			computePsoDesc.CS = byteCode;
+			hasCompute = true;
+			return;
 		case ShaderType::Geometry:
 			psoDesc.GS = byteCode;
 			outPSO.indexGS = shader.index;
@@ -215,5 +208,34 @@ inline HRESULT ShaderCompiler::CreatePSO_Internal(PipelineState& outPSO, ShaderI
 		++i;
 		} (), ...);
 
-	return instance->dx12.myDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&outPSO.state));
+	if (hasCompute)
+	{
+		HRESULT result = instance->dx12.myDevice->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&outPSO.state));
+
+		if (SUCCEEDED(result))
+			NAME_D3D12_OBJECT(outPSO.state);
+
+		return result;
+	}
+
+	psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
+	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+	psoDesc.DepthStencilState.DepthEnable = TRUE;
+	psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
+	psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS_EQUAL; // Test: pass if the pixel is closer to the camera
+	psoDesc.DepthStencilState.StencilEnable = FALSE;  // Disable stencil testing
+	psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+	psoDesc.SampleMask = UINT_MAX;
+	psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+	psoDesc.NumRenderTargets = 1;
+	psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+	psoDesc.SampleDesc.Count = 1;
+
+	HRESULT result = instance->dx12.myDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&outPSO.state));
+	
+	if (SUCCEEDED(result))
+		NAME_D3D12_OBJECT(outPSO.state);
+
+	return result;
 }
