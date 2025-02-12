@@ -1,61 +1,42 @@
-struct InstanceData
-{
-    float4x3 WorldMatrix;
-    uint ModelIndex;
-};
+#include "types.hlsli"
 
-struct D3D12_DRAW_INDEXED_ARGUMENTS
+struct DrawIndirectArgs
 {
     uint IndexCountPerInstance;
     uint InstanceCount;
     uint StartIndexLocation;
-    int BaseVertexLocation;
+    uint BaseVertexLocation;
     uint StartInstanceLocation;
 };
 
-struct IndirectDraw
-{
-    D3D12_DRAW_INDEXED_ARGUMENTS args;
-    uint ModelIndex;
-};
+StructuredBuffer<InstanceData> instances : register(t0); // instance data
+StructuredBuffer<DrawIndirectArgs> inputCommands : register(t1); // render commands, i.e mesh info
 
-StructuredBuffer<InstanceData> gInstanceBuffer : register(t0);
-RWStructuredBuffer<uint> gVisibilityBuffer : register(u0);
-RWStructuredBuffer<IndirectDraw> gIndirectBuffer : register(u1);
+RWStructuredBuffer<DrawIndirectArgs> outputCommands : register(u0); // output draw commands
+// AppendStructuredBuffer<DrawIndirectArgs> outputCommands : register(u0); // output draw commands
 
-cbuffer FrustumCB : register(b0)
-{
-    matrix gFrustumPlanes[6];
-};
 
-float Dot(float4 a, float4 b)
-{
-    return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
-}
+#define threadBlockSize 128
 
-[numthreads(256, 1, 1)]
-void CullingCS(uint3 threadId : SV_DispatchThreadID)
+[numthreads(threadBlockSize, 1, 1)]
+void main(uint3 groupId : SV_GroupID, uint groupIndex : SV_GroupIndex, uint3 DTid : SV_DispatchThreadID)
 {
-    uint instanceId = threadId.x;
+    uint index = (groupId.x * threadBlockSize) + groupIndex;
     
-    InstanceData instance = gInstanceBuffer[instanceId];
+    if (DTid.x >= 1)
+        return;
     
-    // Perform frustum culling (pseudo-code for intersection test)
-    bool isVisible = true; // Replace with actual frustum intersection test
-    for (int i = 0; i < 6; ++i)
-    {
-        if (Dot(gFrustumPlanes[i]._11_12_13_14, float4(instance.WorldMatrix[3], 1.0)) < 0.0)
-        {
-            isVisible = false;
-            break;
-        }
-    }
+    if (index >= 1)
+        return;
 
-    gVisibilityBuffer[instanceId] = isVisible ? 1 : 0;
-
-    // Update indirect arguments for the corresponding model
-    if (isVisible)
-    {
-        InterlockedAdd(gIndirectBuffer[instance.ModelIndex].args.InstanceCount, 1);
-    }
+    // InstanceData instance = instances[index];
+    
+    DrawIndirectArgs args;
+    args.BaseVertexLocation = 0;
+    args.IndexCountPerInstance = 36;
+    args.InstanceCount = 1;
+    args.StartIndexLocation = 0;
+    args.StartInstanceLocation = 0;
+    // outputCommands.Append(args);
+    outputCommands[0] = args;
 }

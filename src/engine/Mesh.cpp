@@ -46,6 +46,7 @@ void Mesh::LoadToGPU(class DX12& aDx12)
 		nullptr,
 		IID_PPV_ARGS(&resource)
 	);
+	NAME_D3D12_OBJECT(resource);
 
 	{
 		D3D12_HEAP_PROPERTIES heapProperties = {};
@@ -74,6 +75,7 @@ void Mesh::LoadToGPU(class DX12& aDx12)
 		if (!uploadHeap)
 			throw  std::runtime_error("Upload heap creation failed.");
 
+		NAME_D3D12_OBJECT(uploadHeap);
 
 		void* mappedData = nullptr;
 		ThrowIfFailed(uploadHeap->Map(0, nullptr, &mappedData));

@@ -57,7 +57,7 @@ void GameWindow::OnInit()
 
 		meshes[0].instances.push_back({ S * R * T , meshes[0].mesh->Index() });
 	}
-	meshes[0].buffer.Create(&dx12);
+	//meshes[0].buffer.Create(&dx12);
 
 
 	meshes[1].mesh = new SpherePrimitive();
@@ -74,7 +74,7 @@ void GameWindow::OnInit()
 
 		meshes[1].instances.push_back({ S * R * T , meshes[1].mesh->Index() });
 	}
-	meshes[1].buffer.Create(&dx12);
+	//meshes[1].buffer.Create(&dx12);
 
 }
 
@@ -170,21 +170,21 @@ void GameWindow::OnUpdate()
 
 
 			if (im->IsKeyPressed(VK_F1))
-				dx12.frameBuffer.frameBufferData.renderPass = 0;
+				dx12.frameBuffer.data[0].data.renderPass = 0;
 			if (im->IsKeyPressed(VK_F2))
-				dx12.frameBuffer.frameBufferData.renderPass = 1;
+				dx12.frameBuffer.data[0].data.renderPass = 1;
 			if (im->IsKeyPressed(VK_F3))
-				dx12.frameBuffer.frameBufferData.renderPass = 2;
+				dx12.frameBuffer.data[0].data.renderPass = 2;
 			if (im->IsKeyPressed(VK_F4))
-				dx12.frameBuffer.frameBufferData.renderPass = 3;
+				dx12.frameBuffer.data[0].data.renderPass = 3;
 			if (im->IsKeyPressed(VK_F5))
-				dx12.frameBuffer.frameBufferData.renderPass = 4;
+				dx12.frameBuffer.data[0].data.renderPass = 4;
 			if (im->IsKeyPressed(VK_F6))
-				dx12.frameBuffer.frameBufferData.renderPass = 5;
+				dx12.frameBuffer.data[0].data.renderPass = 5;
 			if (im->IsKeyPressed(VK_F7))
-				dx12.frameBuffer.frameBufferData.renderPass = 6;
+				dx12.frameBuffer.data[0].data.renderPass = 6;
 			if (im->IsKeyPressed(VK_F8))
-				dx12.frameBuffer.frameBufferData.renderPass = 7;
+				dx12.frameBuffer.data[0].data.renderPass = 7;
 
 
 			Vector3f right = camera.Right();
@@ -255,57 +255,31 @@ void GameWindow::OnRender()
 	if (meshes.size() == 0)
 		return;
 
-	//void* mappedUploadBuffer = nullptr;
-	//dx12.instanceUploadBuffer->Map(0, nullptr, &mappedUploadBuffer);
 	for (size_t meshIndex = 0; meshIndex < meshes.size(); ++meshIndex)
 	{
 		if (!meshes[meshIndex].mesh->GPUInitialized())
-			continue;
+			return;
 
-		meshes[meshIndex].buffer.Update(dx12, meshes[meshIndex].instances);
+		//meshes[meshIndex].buffer.Update(dx12, meshes[meshIndex].instances);
+		//dx12.myCommandList->IASetVertexBuffers(0, 1, &meshes[meshIndex].mesh->VertexBufferView());
+		//dx12.myCommandList->IASetIndexBuffer(&meshes[meshIndex].mesh->IndexBufferView());
+		//dx12.myCommandList->IASetVertexBuffers(1, 1, &meshes[meshIndex].buffer.instanceBufferView);
+		//ShaderCompiler::GetPSO(0).Set(dx12);
 
-		//D3D12_VERTEX_BUFFER_VIEW instanceBufferView = {};
-		//instanceBufferView.BufferLocation = dx12.instanceBuffer->GetGPUVirtualAddress();
-		//instanceBufferView.SizeInBytes = sizeof(GPUTransform) * meshes[meshIndex].instances.size();
-		//instanceBufferView.StrideInBytes = sizeof(GPUTransform);
-
-		//memcpy(mappedUploadBuffer, meshes[meshIndex].instances.data(), sizeof(GPUTransform) * meshes[meshIndex].instances.size());
-
-		//dx12.myCommandList->CopyBufferRegion(
-		//	dx12.instanceBuffer.Get(),			// Destination (GPU buffer)
-		//	0,									// Destination offset
-		//	dx12.instanceUploadBuffer.Get(),	// Source (CPU staging buffer)
-		//	0,									// Source offset
-		//	dx12.INSTANCE_BUFFER_SIZE			// Size of data to copy
+		//dx12.myCommandList->DrawIndexedInstanced(
+		//	meshes[meshIndex].mesh->IndexCount(),
+		//	meshes[meshIndex].instances.size(),
+		//	0, 0, 0
 		//);
-		//D3D12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-		//	dx12.instanceBuffer.Get(),
-		//	D3D12_RESOURCE_STATE_COPY_DEST,
-		//	D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER
-		//);
-		//dx12.myCommandList->ResourceBarrier(1, &barrier);
 
-		dx12.myCommandList->IASetVertexBuffers(0, 1, &meshes[meshIndex].mesh->VertexBufferView());
-		dx12.myCommandList->IASetIndexBuffer(&meshes[meshIndex].mesh->IndexBufferView());
-		dx12.myCommandList->IASetVertexBuffers(1, 1, &meshes[meshIndex].buffer.instanceBufferView);
-		//dx12.myCommandList->IASetVertexBuffers(1, 1, &instanceBufferView);
-		ShaderCompiler::GetPSO(0).Set(dx12);
-
-		dx12.myCommandList->DrawIndexedInstanced(
-			meshes[meshIndex].mesh->IndexCount(),
-			meshes[meshIndex].instances.size(),
-			0, 0, 0
-		);
-
-		meshes[meshIndex].buffer.OnEndFrame(&dx12);
-
-		//barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-		//	dx12.instanceBuffer.Get(),
-		//	D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER,
-		//	D3D12_RESOURCE_STATE_COPY_DEST
-		//);
-		//dx12.myCommandList->ResourceBarrier(1, &barrier);
+		//meshes[meshIndex].buffer.OnEndFrame(&dx12);
 	}
-	//dx12.instanceUploadBuffer->Unmap(0, nullptr);
+
+	dx12.instanceBuffer.Update(dx12, meshes[0].instances);
+	dx12.myCommandList->IASetVertexBuffers(0, 1, &meshes[0].mesh->VertexBufferView());
+	dx12.myCommandList->IASetIndexBuffer(&meshes[0].mesh->IndexBufferView());
+	dx12.myCommandList->IASetVertexBuffers(1, 1, &dx12.instanceBuffer.instanceBufferView);
+	ShaderCompiler::GetPSO(dx12.currentPSO).Set(dx12);
+	// ShaderCompiler::GetPSO(dx12.currentComputePSO).Set(dx12);
 }
 

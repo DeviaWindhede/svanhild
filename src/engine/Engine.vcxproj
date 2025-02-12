@@ -116,6 +116,7 @@
   <ItemGroup>
     <ClInclude Include="ApplicationTimer.h" />
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CbvResource.h" />
     <ClInclude Include="CubePrimitive.h" />
     <ClInclude Include="D3D12Window.h" />
     <ClInclude Include="DX12.h" />
@@ -131,6 +132,7 @@
     <ClInclude Include="InstanceCollection.h" />
     <ClInclude Include="MathDefines.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="RenderConstants.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="ResourceLoader.h" />
     <ClInclude Include="SceneBufferTypes.h" />
@@ -158,6 +160,7 @@
   <ItemGroup>
     <ClCompile Include="ApplicationTimer.cpp" />
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CbvResource.cpp" />
     <ClCompile Include="CubePrimitive.cpp" />
     <ClCompile Include="D3D12Window.cpp" />
     <ClCompile Include="DX12.cpp" />
@@ -205,6 +208,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="shader\common.hlsli" />
+    <None Include="shader\types.hlsli" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

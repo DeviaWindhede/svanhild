@@ -1,15 +1,17 @@
 #pragma once
+#include "CbvResource.h"
+
 #include <SceneBufferTypes.h>
 
-using Microsoft::WRL::ComPtr;
-
-class FrameBuffer
+class FrameBuffer : public CbvResource<FrameBufferConstantData>
 {
 public:
-    void Init(class DX12& aDx12);
+	virtual void Init(
+		ID3D12Device* aDevice,
+		D3D12_HEAP_TYPE aHeapType = D3D12_HEAP_TYPE::D3D12_HEAP_TYPE_UPLOAD,
+		const FrameBufferConstantData* aDefaultData = nullptr,
+		size_t aDataSize = sizeof(FrameBufferData),
+		bool aShouldUnmap = false
+	) override;
     void Update(class DX12& aDx12, class Camera& aCamera, class ApplicationTimer& aTimer);
-
-    FrameBufferData frameBufferData = {};
-    ComPtr<ID3D12Resource> resource;
-    UINT8* frameBufferCbvDataBegin = 0;
 };

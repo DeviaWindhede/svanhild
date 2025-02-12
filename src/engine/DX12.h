@@ -3,6 +3,7 @@
 #include <SceneBufferTypes.h>
 #include "StagingDescriptorHeap.h"
 #include "FrameBuffer.h"
+#include <InstanceBuffer.h>
 
 using Microsoft::WRL::ComPtr;
 
@@ -16,6 +17,7 @@ public:
 	void LoadPipeline();
 	void PrepareRender();
 	void ExecuteRender();
+    void EndRender();
 	void WaitForGPU();
     void WaitForNextFrame();
     void MoveToNextFrame();
@@ -32,6 +34,11 @@ public:
     static constexpr UINT MAX_BOUND_SRV_COUNT = 64;
     static constexpr UINT INSTANCE_BUFFER_SIZE = 4096;
 
+    static constexpr UINT CBV_SIZE = 0; // TODO: Change to 2 here
+    static constexpr UINT SRV_SIZE = 2;
+    static constexpr UINT UAV_SIZE = 1;
+    static constexpr UINT CBV_SRV_UAV_SIZE = CBV_SIZE + SRV_SIZE + UAV_SIZE; //* FrameCount; // 2srv + 1uav
+
     // Pipeline objects
     CD3DX12_VIEWPORT myViewport;
     CD3DX12_RECT myScissorRect;
@@ -39,31 +46,39 @@ public:
     ComPtr<ID3D12Device> myDevice;
     ComPtr<ID3D12Resource> myRenderTargets[FrameCount];
     ComPtr<ID3D12Resource> myDepthBuffer;
-    ComPtr<ID3D12Resource> instanceBuffer;
-    ComPtr<ID3D12Resource> instanceUploadBuffer;
     ComPtr<ID3D12CommandAllocator> myCommandAllocator[FrameCount];
+    ComPtr<ID3D12CommandAllocator> myComputeCommandAllocator[FrameCount];
     ComPtr<ID3D12CommandAllocator> myBundleAllocator;
     ComPtr<ID3D12CommandQueue> myCommandQueue;
+    ComPtr<ID3D12CommandQueue> myComputeCommandQueue;
+    ComPtr<ID3D12CommandSignature> myCommandSignature;
     ComPtr<ID3D12RootSignature> myRootSignature;
+    ComPtr<ID3D12RootSignature> myComputeRootSignature;
     ComPtr<ID3D12DescriptorHeap> myRtvHeap;
-    ComPtr<ID3D12DescriptorHeap> myCbvHeap;
+    DescriptorHeap myComputeCbvSrvUavHeap;
     DescriptorHeap mySrvHeap;
     StagingDescriptorHeap mySrvStagingHeap;
     ComPtr<ID3D12DescriptorHeap> myDsvHeap;
     ComPtr<ID3D12GraphicsCommandList> myCommandList;
+    ComPtr<ID3D12GraphicsCommandList> myComputeCommandList;
     ComPtr<ID3D12GraphicsCommandList> myBundle;
 
+    InstanceBuffer instanceBuffer;
     FrameBuffer frameBuffer;
     HANDLE mySwapChainWaitableObject = nullptr;
     UINT myRtvDescriptorSize;
-    size_t currentPSO;
-    size_t currentComputePSO;
+    size_t currentPSO = SIZE_T_MAX;
+    size_t currentComputePSO = SIZE_T_MAX;
 
+    ComPtr<ID3D12Resource> myProcessedCommandBuffers[FrameCount];
+    ComPtr<ID3D12Resource> myProcessedCommandBufferCounterReset;
 
     // Synchronization objects
+    UINT cbvSrvUavDescriptorSize = 0;
     UINT myFrameIndex;
     HANDLE myFenceEvent;
     ComPtr<ID3D12Fence> myFence;
+    ComPtr<ID3D12Fence> myComputeFence;
     UINT64 myFenceValues[FrameCount];
     bool swapChainOccluded = false;
     bool useVSync = false;

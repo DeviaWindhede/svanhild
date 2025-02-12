@@ -322,12 +322,18 @@ HRESULT ShaderCompiler::CompileShader_Internal(std::wstring aPath, ShaderType aT
 
 void PipelineState::Set(DX12& aDx12) const
 {
-	//if (aDx12.currentPSO == index)
-	//	return;
+	bool isCompute = indexCS < SIZE_T_MAX;
+
+	if ((isCompute ? aDx12.currentComputePSO : aDx12.currentPSO) == index)
+		return;
+
+	if (isCompute)
+	{
+		aDx12.myComputeCommandList->SetPipelineState(state.Get());
+		aDx12.currentComputePSO = index;
+		return;
+	}
 
 	aDx12.myCommandList->SetPipelineState(state.Get());
-	if (indexVS < SIZE_T_MAX)
-		aDx12.currentComputePSO = index;
-	else
-		aDx12.currentPSO = index;
+	aDx12.currentPSO = index;
 }

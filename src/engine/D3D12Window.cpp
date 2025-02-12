@@ -64,67 +64,14 @@ void D3D12Window::OnBeginFrame()
 	resourceLoader.Update();
 	dx12.frameBuffer.Update(dx12, camera, _timer);
 
-	ThrowIfFailed(dx12.myCommandAllocator[dx12.myFrameIndex]->Reset());
-	ThrowIfFailed(dx12.myCommandList->Reset(dx12.myCommandAllocator[dx12.myFrameIndex].Get(), ShaderCompiler::GetPSO(dx12.currentPSO).state.Get()));
-
-	// Set necessary state.
-	dx12.myCommandList->SetGraphicsRootSignature(dx12.myRootSignature.Get());
-
-	ID3D12DescriptorHeap* ppHeaps[] = { dx12.mySrvHeap.descriptorHeap };
-	dx12.myCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-
-	D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = dx12.mySrvHeap.gpuStart;
-	dx12.myCommandList->SetGraphicsRootDescriptorTable(1, gpuHandle);
-
-	dx12.myCommandList->SetGraphicsRootConstantBufferView(0, dx12.frameBuffer.resource->GetGPUVirtualAddress());
-
-
-	dx12.myCommandList->RSSetViewports(1, &dx12.myViewport);
-	dx12.myCommandList->RSSetScissorRects(1, &dx12.myScissorRect);
-
-	// Indicate that the back buffer will be used as a render target.
-	{
-		CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-			dx12.myRenderTargets[dx12.myFrameIndex].Get(),
-			D3D12_RESOURCE_STATE_PRESENT,
-			D3D12_RESOURCE_STATE_RENDER_TARGET);
-
-		dx12.myCommandList->ResourceBarrier(1, &barrier);
-	}
-
-	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle = dx12.myDsvHeap->GetCPUDescriptorHandleForHeapStart();
-	CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(dx12.myRtvHeap->GetCPUDescriptorHandleForHeapStart(), dx12.myFrameIndex, dx12.myRtvDescriptorSize);
-	dx12.myCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, &dsvHandle);
-
-	dx12.myCommandList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.0f, 0, 0, NULL);
-
-	// Record commands.
-	const float clearColor[] = { 0.0f, 0.2f, 0.4f, 1.0f };
-	dx12.myCommandList->ClearRenderTargetView(rtvHandle, clearColor, 0, nullptr);
-
-	// Execute the commands stored in the bundle.
-	//dx12.myCommandList->ExecuteBundle(dx12.myBundle.Get());
-
-	dx12.myCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
+	dx12.PrepareRender();
 }
 
 void D3D12Window::OnEndFrame()
 {
-	ImGui_EndFrame(dx12);
-
-	// Indicate that the back buffer will now be used to present.
-	{
-		CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-			dx12.myRenderTargets[dx12.myFrameIndex].Get(),
-			D3D12_RESOURCE_STATE_RENDER_TARGET,
-			D3D12_RESOURCE_STATE_PRESENT);
-		dx12.myCommandList->ResourceBarrier(1, &barrier);
-	}
-
-	ThrowIfFailed(dx12.myCommandList->Close());
-
+	// ImGui_EndFrame(dx12);
 	dx12.ExecuteRender();
+	dx12.EndRender();
 
 	IWindow::OnEndFrame();
 }

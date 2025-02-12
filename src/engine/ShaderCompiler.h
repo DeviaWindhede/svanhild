@@ -30,6 +30,7 @@ public:
 	void Set(DX12& aDx12) const;
 
 	size_t index	= SIZE_T_MAX;
+	size_t indexCS	= SIZE_T_MAX;
 	size_t indexVS	= SIZE_T_MAX;
 	size_t indexPS	= SIZE_T_MAX;
 	size_t indexGS	= SIZE_T_MAX;
@@ -69,7 +70,7 @@ public:
 	~ShaderCompiler();
 
 	template<class... ShaderIndicies>
-	static HRESULT CreatePSO(ShaderIndicies... aIndicies);
+	static size_t CreatePSO(ShaderIndicies... aIndicies);
 	static HRESULT CompileShader(std::wstring aPath, ShaderType aType, size_t& outShaderIndex);
 	static HRESULT RecompileShader(const Shader& aShader);
 
@@ -125,18 +126,18 @@ private:
 };
 
 template<class ...ShaderIndicies>
-inline HRESULT ShaderCompiler::CreatePSO(ShaderIndicies ...aIndicies)
+inline size_t ShaderCompiler::CreatePSO(ShaderIndicies ...aIndicies)
 {
 	PipelineState pso{};
 	HRESULT hr = CreatePSO_Internal(pso, aIndicies...);
 
 	if (FAILED(hr))
-		return hr;
+		return SIZE_T_MAX;
 
 	pso.index = instance->states.size();
 	instance->states.push_back(pso);
 
-	return hr;
+	return pso.index;
 }
 
 template<class ...ShaderIndicies>
@@ -146,26 +147,11 @@ inline HRESULT ShaderCompiler::CreatePSO_Internal(PipelineState& outPSO, ShaderI
 	outPSO = {};
 
 	// TODO: Add custom desc as param
-	D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
-	{
-		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,  D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT,   0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT,  0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
-		{ "WORLD",  0, DXGI_FORMAT_R32G32B32A32_FLOAT,	1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
-		{ "WORLD",  1, DXGI_FORMAT_R32G32B32A32_FLOAT,	1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
-		{ "WORLD",  2, DXGI_FORMAT_R32G32B32A32_FLOAT,	1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
-		{ "MODEL",  0, DXGI_FORMAT_R32_UINT,			1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 }
-	};
-
-	// TODO: Add custom desc as param
 	D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
 	psoDesc.pRootSignature = instance->dx12.myRootSignature.Get();
 
 	D3D12_COMPUTE_PIPELINE_STATE_DESC computePsoDesc = {};
-	//computePsoDesc.pRootSignature = instance->dx12.myComputeRootSignature.Get();
+	computePsoDesc.pRootSignature = instance->dx12.myComputeRootSignature.Get();
 
 	bool hasCompute = false;
 	int i = 0;
@@ -187,6 +173,7 @@ inline HRESULT ShaderCompiler::CreatePSO_Internal(PipelineState& outPSO, ShaderI
 			break;
 		case ShaderType::Compute:
 			computePsoDesc.CS = byteCode;
+			outPSO.indexCS = shader.index;
 			hasCompute = true;
 			return;
 		case ShaderType::Geometry:
@@ -217,6 +204,21 @@ inline HRESULT ShaderCompiler::CreatePSO_Internal(PipelineState& outPSO, ShaderI
 
 		return result;
 	}
+
+	// TODO: Add custom desc as param
+	D3D12_INPUT_ELEMENT_DESC inputElementDescs[] =
+	{
+		{ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT,  D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "COLOR", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,    0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT,   0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "BINORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "TANGENT", 0, DXGI_FORMAT_R32G32B32_FLOAT,  0, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+		{ "WORLD",  0, DXGI_FORMAT_R32G32B32A32_FLOAT,	1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
+		{ "WORLD",  1, DXGI_FORMAT_R32G32B32A32_FLOAT,	1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
+		{ "WORLD",  2, DXGI_FORMAT_R32G32B32A32_FLOAT,	1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 },
+		{ "MODEL",  0, DXGI_FORMAT_R32_UINT,			1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 }
+	};
 
 	psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);

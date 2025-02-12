@@ -50,6 +50,13 @@ struct FrameBufferData
     float farPlane	= 0;
     float time		= 0;
 	UINT renderPass = 0;
-    float padding[23]; // Padding so the constant buffer is 256-byte aligned.
 };
-static_assert((sizeof(FrameBufferData) % 256) == 0, "Constant Buffer size must be 256-byte aligned");
+static_assert((sizeof(FrameBufferData) % 4) == 0, "must be 4-byte aligned");
+
+struct FrameBufferConstantData
+{
+	FrameBufferData data;
+	float padding[23]; // Padding so the constant buffer is 256-byte aligned.
+};
+
+static_assert((sizeof(FrameBufferConstantData) % 256) == 0, "Constant Buffer size must be 256-byte aligned");

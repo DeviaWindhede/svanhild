@@ -25,6 +25,7 @@ HRESULT UploadBuffer::Initialize(ComPtr<ID3D12Device> aDevice, size_t aSize)
 		m_spUploadBuffer->Map(0, &readRange, &pData);
 		m_pDataCur = m_pDataBegin = reinterpret_cast<UINT8*>(pData);
 		m_pDataEnd = m_pDataBegin + aSize;
+		NAME_D3D12_OBJECT(m_spUploadBuffer);
 	}
 	return hr;
 }

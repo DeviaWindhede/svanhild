@@ -1,14 +1,10 @@
+#include "types.hlsli"
+
 #define MAX_BOUND_SRV_COUNT 8
 
 cbuffer SceneConstantBuffer : register(b0)
 {
-    float4x4 g_view; // mesh to world (inverse view)
-    float4x4 g_projection; // world to clip
-    float2 g_viewport;
-    float g_nearPlane;
-    float g_farPlane;
-    float g_time;
-    uint g_renderPass;
+    FrameBufferData frameBuffer;
     float g_padding[23]; // Padding so the constant buffer is 256-byte aligned.
 };
 

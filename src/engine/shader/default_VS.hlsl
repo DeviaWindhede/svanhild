@@ -19,15 +19,15 @@ PSInput main(VertexInputType Input)
     
     // todo add object transform instanced data
     float4 vertexObjectPosition = mul(transform, float4(Input.position.x, Input.position.y, Input.position.z, 1.0f));
-    float4 vertexViewPosition = mul(g_view, vertexObjectPosition);
-    float4 vertexProjectionPosition = mul(g_projection, vertexViewPosition);
+    float4 vertexViewPosition = mul(frameBuffer.g_view, vertexObjectPosition);
+    float4 vertexProjectionPosition = mul(frameBuffer.g_projection, vertexViewPosition);
     
     
     result.position = vertexProjectionPosition;
     result.uv = Input.uv;
     result.color = float4(Input.color.rgb, 1);
-    result.temp = g_renderPass;
-    result.time = g_time;
+    result.temp = frameBuffer.g_renderPass;
+    result.time = frameBuffer.g_time;
     
     return result;
 }
