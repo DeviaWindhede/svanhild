@@ -17,6 +17,8 @@
 #include <Camera.h>
 #include <FrameBuffer.h>
 
+#include "EditorWindow.h"
+
 using Microsoft::WRL::ComPtr;
 
 class D3D12Window : public IWindow
@@ -33,10 +35,7 @@ public:
 
     __forceinline void Quit() { PostQuitMessage(0); };
 protected:
-#if USE_IMGUI
-    static const int APP_NUM_FRAMES_IN_FLIGHT = 3;
-    static const int APP_NUM_BACK_BUFFERS = 3;
-#endif
+    EditorWindow editorWindow;
     
     DX12 dx12;
     Camera camera;

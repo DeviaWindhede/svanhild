@@ -16,8 +16,6 @@
 #include "Win32Application.h"
 #include "ApplicationTimer.h"
 
-#define USE_IMGUI 1
-
 class IWindow
 {
 private:
@@ -45,20 +43,14 @@ public:
     UINT GetWidth() const           { return myWidth; }
     UINT GetHeight() const          { return myHeight; }
     const WCHAR* GetTitle() const   { return myTitle.c_str(); }
-
+    const ApplicationTimer& GetTimer() const { return _timer; }
+    
     void ParseCommandLineArgs(_In_reads_(argc) WCHAR* argv[], int argc);
 
     static std::wstring GetAssetFullPath(const std::wstring& assetName) { return myAssetsPath + assetName; }
     static std::wstring GetEngineShaderFullPath(const std::wstring& assetName) { return myEngineShaderPath + assetName; }
     static std::wstring GetCSOPath(const std::wstring& assetName) { return myCSOPath + assetName; }
 protected:
-#if USE_IMGUI
-    static const int APP_SRV_HEAP_SIZE = 64;
-#endif
-
-    void ImGui_Init(class DX12& aDx12);
-    void ImGui_EndFrame(class DX12& aDx12);
-
     void SetCustomWindowText(LPCWSTR text);
 
     ApplicationTimer _timer;

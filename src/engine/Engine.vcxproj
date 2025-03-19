@@ -123,6 +123,7 @@
     <ClInclude Include="DXHelper.h" />
     <ClInclude Include="DescriptorHeap.h" />
     <ClInclude Include="DescriptorHeapHandle.h" />
+    <ClInclude Include="EditorWindow.h" />
     <ClInclude Include="FrameBuffer.h" />
     <ClInclude Include="GraphicsEngine.h" />
     <ClInclude Include="IResource.h" />
@@ -169,6 +170,7 @@
     <ClCompile Include="DX12.cpp" />
     <ClCompile Include="DescriptorHeap.cpp" />
     <ClCompile Include="DescriptorHeapHandle.cpp" />
+    <ClCompile Include="EditorWindow.cpp" />
     <ClCompile Include="FrameBuffer.cpp" />
     <ClCompile Include="GraphicsEngine.cpp" />
     <ClCompile Include="IWindow.cpp" />

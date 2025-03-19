@@ -56,7 +56,7 @@ void D3D12Window::OnInit()
 	InputManager::CreateInstance();
 
 	dx12.LoadPipeline();
-	ImGui_Init(dx12);
+	editorWindow.Init(Win32Application::GetHwnd(), &dx12, this);
 }
 
 void D3D12Window::OnBeginFrame()
@@ -69,7 +69,7 @@ void D3D12Window::OnBeginFrame()
 
 void D3D12Window::OnEndFrame()
 {
-	// ImGui_EndFrame(dx12);
+	editorWindow.EndFrame();
 	dx12.ExecuteRender();
 	dx12.EndRender();
 
