@@ -596,6 +596,7 @@ void DX12::LoadPipeline()
     }
 
     instanceBuffer.Create(this);
+    meshRenderer.Create(this);
 
     // Close the command list and execute it to begin the initial GPU setup.
     ThrowIfFailed(myCommandList->Close());
@@ -622,8 +623,7 @@ void DX12::PrepareRender()
         ID3D12DescriptorHeap* ppHeaps[] = {myComputeCbvSrvUavHeap.descriptorHeap};
         myComputeCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
         
-        instanceBuffer.OnBeginFrame(this);
-        instanceBuffer.OnRender(this);
+        meshRenderer.Dispatch(this);
     }
     ThrowIfFailed(myComputeCommandList->Close());
 
@@ -641,15 +641,11 @@ void DX12::PrepareRender()
         myCommandList->RSSetViewports(1, &myViewport);
         myCommandList->RSSetScissorRects(1, &myScissorRect);
 
+        meshRenderer.PrepareRender(this);
         // Indicate that the back buffer will be used as a render target.
         {
-            CD3DX12_RESOURCE_BARRIER barriers[2]
+            CD3DX12_RESOURCE_BARRIER barriers[1]
             {
-                CD3DX12_RESOURCE_BARRIER::Transition(
-                    instanceBuffer.indirectArgsBuffer.Get(),
-                    D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-                    D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT
-                ),
                 CD3DX12_RESOURCE_BARRIER::Transition(
                     myRenderTargets[myFrameIndex].Get(),
                     D3D12_RESOURCE_STATE_PRESENT,
@@ -681,34 +677,7 @@ void DX12::PrepareRender()
 
 void DX12::ExecuteRender()
 {
-    
-    {
-        myCommandList->ExecuteIndirect(
-            myCommandSignature.Get(), // Predefined signature for DrawIndexedInstanced
-            1,                              // Execute 1 draw call
-            instanceBuffer.indirectArgsBuffer.Get(),       // Buffer with draw arguments
-            0,                              // Argument buffer offset
-            nullptr,                         // No counters
-            0
-        );
-        
-        CD3DX12_RESOURCE_BARRIER barriers[2]
-        {
-            CD3DX12_RESOURCE_BARRIER::Transition(
-                instanceBuffer.indirectArgsBuffer.Get(),
-                D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
-                D3D12_RESOURCE_STATE_COPY_DEST
-            ),
-            CD3DX12_RESOURCE_BARRIER::Transition(
-                myRenderTargets[myFrameIndex].Get(),
-                D3D12_RESOURCE_STATE_RENDER_TARGET,
-                D3D12_RESOURCE_STATE_PRESENT
-            )
-        };
-        
-        myCommandList->ResourceBarrier(_countof(barriers), barriers);
-        ThrowIfFailed(myCommandList->Close());
-    }
+    meshRenderer.ExecuteIndirectRender(this);
     
     // {
     //     instanceBuffer.OnRender(this);
@@ -728,6 +697,15 @@ void DX12::ExecuteRender()
     // }
     
     {
+        CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+            myRenderTargets[myFrameIndex].Get(),
+            D3D12_RESOURCE_STATE_RENDER_TARGET,
+            D3D12_RESOURCE_STATE_PRESENT);
+    
+        myCommandList->ResourceBarrier(1, &barrier);
+        
+	    ThrowIfFailed(myCommandList->Close());
+        
         ID3D12CommandList* ppCommandLists[] = {myComputeCommandList.Get()};
         myComputeCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 
@@ -749,6 +727,7 @@ void DX12::EndRender()
     ThrowIfFailed(hr);
     swapChainOccluded = hr == DXGI_STATUS_OCCLUDED;
 
+    meshRenderer.OnEndFrame(this);
     instanceBuffer.OnEndFrame(this);
     MoveToNextFrame();
 }

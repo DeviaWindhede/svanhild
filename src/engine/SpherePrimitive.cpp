@@ -12,9 +12,9 @@ void SpherePrimitive::InitPrimitive(int aResolution)
         for (int x = 0; x <= aResolution; ++x) {
             float xSegment = (float)x / (float)aResolution;
             float ySegment = (float)y / (float)aResolution;
-            float xPos = radius * std::cos(xSegment * 2.0f * M_PI) * std::sin(ySegment * M_PI);
-            float yPos = radius * std::cos(ySegment * M_PI);
-            float zPos = radius * std::sin(xSegment * 2.0f * M_PI) * std::sin(ySegment * M_PI);
+            float xPos = radius * static_cast<float>(std::cos(xSegment * 2.0f * M_PI) * std::sin(ySegment * M_PI));
+            float yPos = radius * static_cast<float>(std::cos(ySegment * M_PI));
+            float zPos = radius * static_cast<float>(std::sin(xSegment * 2.0f * M_PI) * std::sin(ySegment * M_PI));
 
             vertices.push_back({
                 { xPos, yPos, zPos },

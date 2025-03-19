@@ -132,11 +132,14 @@
     <ClInclude Include="InstanceCollection.h" />
     <ClInclude Include="MathDefines.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="MeshBuffer.h" />
+    <ClInclude Include="MeshRenderer.h" />
     <ClInclude Include="RenderConstants.h" />
     <ClInclude Include="Renderer.h" />
     <ClInclude Include="ResourceLoader.h" />
     <ClInclude Include="SceneBufferTypes.h" />
     <ClInclude Include="ShaderCompiler.h" />
+    <ClInclude Include="ResourceBuffer.h" />
     <ClInclude Include="SpherePrimitive.h" />
     <ClInclude Include="StagingDescriptorHeap.h" />
     <ClInclude Include="StringHelper.h" />
@@ -173,9 +176,12 @@
     <ClCompile Include="InstanceBuffer.cpp" />
     <ClCompile Include="InstanceCollection.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="MeshBuffer.cpp" />
+    <ClCompile Include="MeshRenderer.cpp" />
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="ResourceLoader.cpp" />
     <ClCompile Include="ShaderCompiler.cpp" />
+    <ClCompile Include="ResourceBuffer.cpp" />
     <ClCompile Include="SpherePrimitive.cpp" />
     <ClCompile Include="StagingDescriptorHeap.cpp" />
     <ClCompile Include="Texture.cpp" />

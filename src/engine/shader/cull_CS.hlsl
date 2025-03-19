@@ -31,12 +31,12 @@ void main(uint3 groupId : SV_GroupID, uint groupIndex : SV_GroupIndex, uint3 DTi
 
     // InstanceData instance = instances[index];
     
-    DrawIndirectArgs args;
-    args.BaseVertexLocation = 0;
-    args.IndexCountPerInstance = 36;
-    args.InstanceCount = 1;
-    args.StartIndexLocation = 0;
-    args.StartInstanceLocation = 0;
+    // DrawIndirectArgs args;
+    // args.BaseVertexLocation = 0;
+    // args.IndexCountPerInstance = 36;
+    // args.InstanceCount = 1;
+    // args.StartIndexLocation = 0;
+    // args.StartInstanceLocation = 0;
     // outputCommands.Append(args);
-    outputCommands[0] = args;
+    outputCommands[0] = inputCommands[0];
 }

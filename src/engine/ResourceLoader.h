@@ -32,6 +32,12 @@ struct PendingResource
 	IFunction* callback = nullptr;
 };
 
+struct ModelData
+{
+	size_t vertexBaseLocation = 0;
+	size_t indexBaseLocation = 0;
+};
+
 class ResourceLoader
 {
 public:
@@ -53,6 +59,7 @@ private:
 	void PrepareLoad();
 	void ExitLoad();
 
+	std::vector<ModelData> modelMap;
 	std::vector<PendingResource> resourcesToLoad;
 	std::vector<class IResource*> activeResources;
 	UINT resourceCounter = 0;

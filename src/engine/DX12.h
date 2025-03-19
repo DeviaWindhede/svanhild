@@ -5,11 +5,23 @@
 #include "FrameBuffer.h"
 #include <InstanceBuffer.h>
 
+#include "MeshRenderer.h"
+
 using Microsoft::WRL::ComPtr;
 
 class DX12
 {
 public:
+    // TODO: MOVE TO MATH
+    inline static size_t NextPowerOfTwo(size_t aValue)
+    {
+        if (aValue <= 1)
+            return 1;
+        unsigned long index;
+        _BitScanReverse64(&index, aValue - 1);
+        return 1ull << (index + 1);
+    }
+    
     DX12(UINT aWidth, UINT aHeight, bool aUseWarpDevice);
     ~DX12();
 
@@ -63,6 +75,7 @@ public:
     ComPtr<ID3D12GraphicsCommandList> myComputeCommandList;
     ComPtr<ID3D12GraphicsCommandList> myBundle;
 
+    // GpuResources resources;
     InstanceBuffer instanceBuffer;
     FrameBuffer frameBuffer;
     HANDLE mySwapChainWaitableObject = nullptr;
@@ -73,6 +86,7 @@ public:
     ComPtr<ID3D12Resource> myProcessedCommandBuffers[FrameCount];
     ComPtr<ID3D12Resource> myProcessedCommandBufferCounterReset;
 
+    MeshRenderer meshRenderer;
     // Synchronization objects
     UINT cbvSrvUavDescriptorSize = 0;
     UINT myFrameIndex;

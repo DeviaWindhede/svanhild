@@ -35,6 +35,7 @@
     <ClInclude Include="ResourceLoader.h" />
     <ClInclude Include="SceneBufferTypes.h" />
     <ClInclude Include="ShaderCompiler.h" />
+    <ClInclude Include="SharedBuffer.h" />
     <ClInclude Include="SpherePrimitive.h" />
     <ClInclude Include="StagingDescriptorHeap.h" />
     <ClInclude Include="StringHelper.h" />
@@ -98,6 +99,7 @@
     <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="ResourceLoader.cpp" />
     <ClCompile Include="ShaderCompiler.cpp" />
+    <ClCompile Include="SharedBuffer.cpp" />
     <ClCompile Include="SpherePrimitive.cpp" />
     <ClCompile Include="StagingDescriptorHeap.cpp" />
     <ClCompile Include="Texture.cpp" />

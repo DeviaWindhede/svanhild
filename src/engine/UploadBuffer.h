@@ -62,7 +62,7 @@ public:
 	HRESULT SuballocateFromBuffer(SIZE_T uSize, UINT uAlign)
 	{
 		m_pDataCur = reinterpret_cast<UINT8*>(
-			Align(reinterpret_cast<SIZE_T>(m_pDataCur), uAlign)
+			Align(reinterpret_cast<UINT>(m_pDataCur), uAlign)
 		);
 
 		return (m_pDataCur + uSize > m_pDataEnd) ? E_INVALIDARG : S_OK;
