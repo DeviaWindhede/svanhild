@@ -117,6 +117,7 @@
     <ClInclude Include="ApplicationTimer.h" />
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CbvResource.h" />
+    <ClInclude Include="ClassHelper.h" />
     <ClInclude Include="CubePrimitive.h" />
     <ClInclude Include="D3D12Window.h" />
     <ClInclude Include="DX12.h" />

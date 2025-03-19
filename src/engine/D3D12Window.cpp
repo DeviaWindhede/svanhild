@@ -69,8 +69,8 @@ void D3D12Window::OnBeginFrame()
 
 void D3D12Window::OnEndFrame()
 {
-	editorWindow.EndFrame();
 	dx12.ExecuteRender();
+	editorWindow.EndFrame();
 	dx12.EndRender();
 
 	IWindow::OnEndFrame();

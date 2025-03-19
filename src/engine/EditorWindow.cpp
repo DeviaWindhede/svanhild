@@ -1,82 +1,86 @@
 ﻿#include "pch.h"
 #include "EditorWindow.h"
 
+#if USE_IMGUI
 #include "DX12.h"
 #include "IWindow.h"
 
-#if USE_IMGUI
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_dx12.h>
 #include <imgui/backends/imgui_impl_win32.h>
-#include "DX12.h"
 #include <InputManager.h>
 
 void EditorWindow::Render()
 {
-	ImGui::Begin("Data");
-	ImGui::Text(("FPS: " + std::to_string((int)(1.0f / window->GetTimer().GetDeltaTime())) + ", " + std::to_string(window->GetTimer().GetDeltaTime()) + "ms").c_str());
-	ImGui::End();
+    ImGui::Begin("Data");
+    ImGui::Text(
+        ("FPS: " + std::to_string((int)(1.0f / window->GetTimer().GetDeltaTime())) + ", " + std::to_string(
+            window->GetTimer().GetDeltaTime()) + "ms").c_str());
+    ImGui::End();
 }
 
 // Simple free list based allocator
 struct ExampleDescriptorHeapAllocator
 {
-	ID3D12DescriptorHeap* Heap = nullptr;
-	D3D12_DESCRIPTOR_HEAP_TYPE  HeapType = D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES;
-	D3D12_CPU_DESCRIPTOR_HANDLE HeapStartCpu;
-	D3D12_GPU_DESCRIPTOR_HANDLE HeapStartGpu;
-	UINT                        HeapHandleIncrement;
-	ImVector<int>               FreeIndices;
+    ID3D12DescriptorHeap* Heap = nullptr;
+    D3D12_DESCRIPTOR_HEAP_TYPE HeapType = D3D12_DESCRIPTOR_HEAP_TYPE_NUM_TYPES;
+    D3D12_CPU_DESCRIPTOR_HANDLE HeapStartCpu;
+    D3D12_GPU_DESCRIPTOR_HANDLE HeapStartGpu;
+    UINT HeapHandleIncrement;
+    ImVector<int> FreeIndices;
 
-	void Create(ID3D12Device* device, ID3D12DescriptorHeap* heap)
-	{
-		IM_ASSERT(Heap == nullptr && FreeIndices.empty());
-		Heap = heap;
-		D3D12_DESCRIPTOR_HEAP_DESC desc = heap->GetDesc();
-		HeapType = desc.Type;
-		HeapStartCpu = Heap->GetCPUDescriptorHandleForHeapStart();
-		HeapStartGpu = Heap->GetGPUDescriptorHandleForHeapStart();
-		HeapHandleIncrement = device->GetDescriptorHandleIncrementSize(HeapType);
-		FreeIndices.reserve((int)desc.NumDescriptors);
-		for (int n = desc.NumDescriptors; n > 0; n--)
-			FreeIndices.push_back(n);
-	}
-	void Destroy()
-	{
-		Heap = nullptr;
-		FreeIndices.clear();
-	}
-	void Alloc(D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_desc_handle)
-	{
-		IM_ASSERT(FreeIndices.Size > 0);
-		int idx = FreeIndices.back();
-		FreeIndices.pop_back();
-		out_cpu_desc_handle->ptr = HeapStartCpu.ptr + (idx * HeapHandleIncrement);
-		out_gpu_desc_handle->ptr = HeapStartGpu.ptr + (idx * HeapHandleIncrement);
-	}
-	void Free(D3D12_CPU_DESCRIPTOR_HANDLE out_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE out_gpu_desc_handle)
-	{
-		int cpu_idx = (int)((out_cpu_desc_handle.ptr - HeapStartCpu.ptr) / HeapHandleIncrement);
-		int gpu_idx = (int)((out_gpu_desc_handle.ptr - HeapStartGpu.ptr) / HeapHandleIncrement);
-		IM_ASSERT(cpu_idx == gpu_idx);
-		FreeIndices.push_back(cpu_idx);
-	}
+    void Create(ID3D12Device* device, ID3D12DescriptorHeap* heap)
+    {
+        IM_ASSERT(Heap == nullptr && FreeIndices.empty());
+        Heap = heap;
+        D3D12_DESCRIPTOR_HEAP_DESC desc = heap->GetDesc();
+        HeapType = desc.Type;
+        HeapStartCpu = Heap->GetCPUDescriptorHandleForHeapStart();
+        HeapStartGpu = Heap->GetGPUDescriptorHandleForHeapStart();
+        HeapHandleIncrement = device->GetDescriptorHandleIncrementSize(HeapType);
+        FreeIndices.reserve((int)desc.NumDescriptors);
+        for (int n = desc.NumDescriptors; n > 0; n--)
+            FreeIndices.push_back(n);
+    }
+
+    void Destroy()
+    {
+        Heap = nullptr;
+        FreeIndices.clear();
+    }
+
+    void Alloc(D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_desc_handle)
+    {
+        IM_ASSERT(FreeIndices.Size > 0);
+        int idx = FreeIndices.back();
+        FreeIndices.pop_back();
+        out_cpu_desc_handle->ptr = HeapStartCpu.ptr + (idx * HeapHandleIncrement);
+        out_gpu_desc_handle->ptr = HeapStartGpu.ptr + (idx * HeapHandleIncrement);
+    }
+
+    void Free(D3D12_CPU_DESCRIPTOR_HANDLE out_cpu_desc_handle, D3D12_GPU_DESCRIPTOR_HANDLE out_gpu_desc_handle)
+    {
+        int cpu_idx = (int)((out_cpu_desc_handle.ptr - HeapStartCpu.ptr) / HeapHandleIncrement);
+        int gpu_idx = (int)((out_gpu_desc_handle.ptr - HeapStartGpu.ptr) / HeapHandleIncrement);
+        IM_ASSERT(cpu_idx == gpu_idx);
+        FreeIndices.push_back(cpu_idx);
+    }
 };
 
 static ID3D12DescriptorHeap* imguiSrvDescHeap = nullptr;
 static ExampleDescriptorHeapAllocator imguiSrvDescHeapAlloc;
 
-
 EditorWindow::~EditorWindow()
 {
-	ImGui_ImplDX12_Shutdown();
-	ImGui_ImplWin32_Shutdown();
-	ImGui::DestroyContext();
+    ImGui_ImplDX12_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
 
-	if (imguiSrvDescHeap) {
-		imguiSrvDescHeap->Release();
-		imguiSrvDescHeap = nullptr;
-	}
+    if (imguiSrvDescHeap)
+    {
+        imguiSrvDescHeap->Release();
+        imguiSrvDescHeap = nullptr;
+    }
 }
 #endif
 
@@ -87,13 +91,13 @@ void EditorWindow::Init(HWND hWnd, class DX12* aDx12, class IWindow* aWindow)
 	aDx12;
 	aWindow;
 #else
-	dx12 = aDx12;
-	window = aWindow;
-	
+    dx12 = aDx12;
+    window = aWindow;
+
     {
         D3D12_DESCRIPTOR_HEAP_DESC desc = {};
         desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-        desc.NumDescriptors = APP_SRV_HEAP_SIZE;
+        desc.NumDescriptors = IMGUI_SRV_HEAP_SIZE;
         desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
         if (dx12->myDevice->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&imguiSrvDescHeap)) != S_OK)
             return;
@@ -103,9 +107,10 @@ void EditorWindow::Init(HWND hWnd, class DX12* aDx12, class IWindow* aWindow)
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    ImGuiIO& io = ImGui::GetIO();
+    (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
 
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
@@ -127,8 +132,16 @@ void EditorWindow::Init(HWND hWnd, class DX12* aDx12, class IWindow* aWindow)
     // (current version of the backend will only allocate one descriptor, future versions will need to allocate more)
     init_info.SrvDescriptorHeap = imguiSrvDescHeap;
 
-    init_info.SrvDescriptorAllocFn = [](ImGui_ImplDX12_InitInfo*, D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_handle) { return imguiSrvDescHeapAlloc.Alloc(out_cpu_handle, out_gpu_handle); };
-    init_info.SrvDescriptorFreeFn = [](ImGui_ImplDX12_InitInfo*, D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle) { return imguiSrvDescHeapAlloc.Free(cpu_handle, gpu_handle); };
+    init_info.SrvDescriptorAllocFn = [](ImGui_ImplDX12_InitInfo*, D3D12_CPU_DESCRIPTOR_HANDLE* out_cpu_handle,
+                                        D3D12_GPU_DESCRIPTOR_HANDLE* out_gpu_handle)
+    {
+        return imguiSrvDescHeapAlloc.Alloc(out_cpu_handle, out_gpu_handle);
+    };
+    init_info.SrvDescriptorFreeFn = [](ImGui_ImplDX12_InitInfo*, D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle,
+                                       D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle)
+    {
+        return imguiSrvDescHeapAlloc.Free(cpu_handle, gpu_handle);
+    };
     ImGui_ImplDX12_Init(&init_info);
 #endif
 }
@@ -138,18 +151,52 @@ void EditorWindow::EndFrame()
 #if !USE_IMGUI
 	__noop;
 #else
+    dx12->WaitForGPU();
+
+    ThrowIfFailed(dx12->myCommandAllocator[dx12->myFrameIndex]->Reset());
+    ThrowIfFailed(dx12->myCommandList->Reset(dx12->myCommandAllocator[dx12->myFrameIndex].Get(), nullptr));
+
+    {
+        CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+            dx12->myRenderTargets[dx12->myFrameIndex].Get(),
+            D3D12_RESOURCE_STATE_PRESENT,
+            D3D12_RESOURCE_STATE_RENDER_TARGET);
+
+        dx12->myCommandList->ResourceBarrier(1, &barrier);
+
+        CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(dx12->myRtvHeap->GetCPUDescriptorHandleForHeapStart(),
+                                                dx12->myFrameIndex,
+                                                dx12->myRtvDescriptorSize);
+        dx12->myCommandList->OMSetRenderTargets(1, &rtvHandle, FALSE, nullptr);
+    }
+
     // Bind ImGui's descriptor heap
-	dx12->myCommandList->SetDescriptorHeaps(1, &imguiSrvDescHeap);
+    dx12->myCommandList->SetDescriptorHeaps(1, &imguiSrvDescHeap);
 
     // Render ImGui
     ImGui_ImplDX12_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
 
-	Render();
+    Render();
 
     // Render ImGui draw data
     ImGui::Render();
     ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), dx12->myCommandList.Get());
+
+    {
+        CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+            dx12->myRenderTargets[dx12->myFrameIndex].Get(),
+            D3D12_RESOURCE_STATE_RENDER_TARGET,
+            D3D12_RESOURCE_STATE_PRESENT);
+
+        dx12->myCommandList->ResourceBarrier(1, &barrier);
+
+        ThrowIfFailed(dx12->myCommandList->Close());
+
+        // Execute the command list.
+        ID3D12CommandList* ppCommandLists[] = {dx12->myCommandList.Get()};
+        dx12->myCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+    }
 #endif
 }

@@ -679,46 +679,28 @@ void DX12::ExecuteRender()
 {
     meshRenderer.ExecuteIndirectRender(this);
     
-    // {
-    //     instanceBuffer.OnRender(this);
-    //     
-    //     CD3DX12_RESOURCE_BARRIER barriers[1]
-    //     {
-    //         CD3DX12_RESOURCE_BARRIER::Transition(
-    //             instanceBuffer.indirectArgsBuffer.Get(),
-    //             D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
-    //             D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT
-    //         )
-    //     };
-    //             
-    //     myComputeCommandList->ResourceBarrier(_countof(barriers), barriers);
-    //     
-    //     ThrowIfFailed(myComputeCommandList->Close());
-    // }
+    CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+        myRenderTargets[myFrameIndex].Get(),
+        D3D12_RESOURCE_STATE_RENDER_TARGET,
+        D3D12_RESOURCE_STATE_PRESENT);
     
+    myCommandList->ResourceBarrier(1, &barrier);
+        
+    ThrowIfFailed(myCommandList->Close());
+
     {
-        CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-            myRenderTargets[myFrameIndex].Get(),
-            D3D12_RESOURCE_STATE_RENDER_TARGET,
-            D3D12_RESOURCE_STATE_PRESENT);
-    
-        myCommandList->ResourceBarrier(1, &barrier);
-        
-	    ThrowIfFailed(myCommandList->Close());
-        
         ID3D12CommandList* ppCommandLists[] = {myComputeCommandList.Get()};
         myComputeCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-
+    
         myComputeCommandQueue->Signal(myComputeFence.Get(), myFenceValues[myFrameIndex]);
-
+    
         // Execute the rendering work only when the compute work is complete.
         myCommandQueue->Wait(myComputeFence.Get(), myFenceValues[myFrameIndex]);
     }
-    {
-        // Execute the command list.
-        ID3D12CommandList* ppCommandLists[] = {myCommandList.Get()};
-        myCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-    }
+    
+    // Execute the command list.
+    ID3D12CommandList* ppCommandLists[] = {myCommandList.Get()};
+    myCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
 }
 
 void DX12::EndRender()
@@ -735,14 +717,6 @@ void DX12::EndRender()
 // Wait for pending GPU work to complete.
 void DX12::WaitForGPU()
 {
-    //ThrowIfFailed(myCommandQueue->Signal(myFence.Get(), ++myFenceValues[myFrameIndex]));
-
-    //if (myFence->GetCompletedValue() < myFenceValues[myFrameIndex])
-    //{
-    //	ThrowIfFailed(myFence->SetEventOnCompletion(myFenceValues[myFrameIndex], myFenceEvent));
-    //	WaitForSingleObjectEx(myFenceEvent, INFINITE, FALSE);
-    //}
-
     ThrowIfFailed(myCommandQueue->Signal(myFence.Get(), myFenceValues[myFrameIndex]));
 
     ThrowIfFailed(myFence->SetEventOnCompletion(myFenceValues[myFrameIndex], myFenceEvent));

@@ -48,4 +48,5 @@
 #include <math.h>
 #include <cmath>
 #include "MathDefines.h"
+#include "ClassHelper.h"
 
