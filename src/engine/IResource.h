@@ -8,21 +8,21 @@ class IResource
 public:
 	virtual ~IResource() = default;
 
-	virtual void LoadToGPU(class DX12& aDx12) { assert(!isGPUInitialized && "Trying to GPU load multiple times!"); }
+	virtual void LoadToGPU(class DX12*, struct ResourceBuffers*) { assert(!isGPUInitialized && "Trying to GPU load multiple times!"); }
 	
-	virtual void OnGPULoadComplete(class DX12&)
+	virtual void OnGPULoadComplete(class DX12*, struct ResourceBuffers*)
 	{
 		isGPUInitialized = true;
 		uploadHeap = nullptr;
 	}
 
-	virtual void UnloadGPU(class DX12& aDx12)
+	virtual void UnloadGPU(class DX12* aDx12, struct ResourceBuffers*)
 	{
 		resource = nullptr;
 		uploadHeap = nullptr;
 	}
 
-	virtual void UnloadCPU(class DX12& aDx12) { __noop; }
+	virtual void UnloadCPU(class DX12* aDx12, struct ResourceBuffers*) { __noop; }
 
 	UINT Index() const { return resourceIndex; }
 	bool GPUInitialized() const { return isGPUInitialized; }

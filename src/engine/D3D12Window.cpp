@@ -26,7 +26,7 @@ D3D12Window::D3D12Window(UINT width, UINT height, std::wstring name) :
 	IWindow(width, height, name),
 	dx12(width, height, myUseWarpDevice),
 	camera(),
-	resourceLoader(dx12)
+	resourceLoader(&dx12)
 {
 }
 
@@ -59,12 +59,22 @@ void D3D12Window::OnInit()
 	editorWindow.Init(Win32Application::GetHwnd(), &dx12, this);
 }
 
+void D3D12Window::OnUpdate()
+{
+}
+
 void D3D12Window::OnBeginFrame()
 {
-	resourceLoader.Update();
 	dx12.frameBuffer.Update(dx12, camera, _timer);
+	resourceLoader.Update();
 
 	dx12.PrepareRender();
+	
+	dx12.myCommandList->IASetVertexBuffers(0, 1, &resourceLoader.GetBuffers().vertexBuffer.vbv);
+	//dx12.myCommandList->IASetVertexBuffers(0, resourceLoader.GetBuffers().vertexBuffer.GetCount(), &resourceLoader.GetBuffers().vertexBuffer.vbv);
+	dx12.myCommandList->IASetIndexBuffer(&resourceLoader.GetBuffers().indexBuffer.ibv);
+	dx12.myCommandList->IASetVertexBuffers(1, 1, &dx12.instanceBuffer.instanceBufferView);
+	ShaderCompiler::GetPSO(dx12.currentPSO).Set(dx12);
 }
 
 void D3D12Window::OnEndFrame()

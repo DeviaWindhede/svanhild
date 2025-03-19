@@ -3,6 +3,8 @@
 #include "DX12.h"
 #include <vector>
 
+#include "ResourceLoader.h"
+
 Mesh::~Mesh()
 {
 	Internal_UnloadCPU();
@@ -32,92 +34,101 @@ void Mesh::PerformResourceBarrier(
 	aCommandList->ResourceBarrier(1, &barrier);
 }
 
-void Mesh::LoadToGPU(class DX12& aDx12)
+void Mesh::LoadToGPU(class DX12* aDx12, struct ResourceBuffers* aBuffers)
 {
-	size_t vertexSize = sizeof(Vertex) * vertexCount;
-	size_t indexSize = sizeof(UINT16) * indexCount;
-	size_t bufferSize = vertexSize + indexSize;
+	aBuffers->vertexBuffer.AddItem(aDx12, vertices, vertexCount);
+	aBuffers->indexBuffer.AddItem(aDx12, indices, indexCount);
 
-	aDx12.myDevice->CreateCommittedResource(
-		&keep(CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT)),
-		D3D12_HEAP_FLAG_NONE,
-		&keep(CD3DX12_RESOURCE_DESC::Buffer(bufferSize)),
-		D3D12_RESOURCE_STATE_COMMON,
-		nullptr,
-		IID_PPV_ARGS(&resource)
-	);
-	NAME_D3D12_OBJECT(resource);
-
-	{
-		D3D12_HEAP_PROPERTIES heapProperties = {};
-		heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
-
-		D3D12_RESOURCE_DESC resourceDesc = {};
-		resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		resourceDesc.Width = bufferSize;
-		resourceDesc.Height = 1;
-		resourceDesc.DepthOrArraySize = 1;
-		resourceDesc.MipLevels = 1;
-		resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
-		resourceDesc.SampleDesc.Count = 1;
-		resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-
-
-		HRESULT hr = aDx12.myDevice->CreateCommittedResource(
-			&heapProperties,
-			D3D12_HEAP_FLAG_NONE,
-			&resourceDesc,
-			D3D12_RESOURCE_STATE_GENERIC_READ,  // The upload heap state is generic read
-			nullptr,
-			IID_PPV_ARGS(&uploadHeap)
-		);
-
-		if (!uploadHeap)
-			throw  std::runtime_error("Upload heap creation failed.");
-
-		NAME_D3D12_OBJECT(uploadHeap);
-
-		void* mappedData = nullptr;
-		ThrowIfFailed(uploadHeap->Map(0, nullptr, &mappedData));
-
-		memcpy(mappedData, Vertices(), vertexSize);
-		memcpy(static_cast<char*>(mappedData) + vertexSize, Indices(), indexSize);
-
-		uploadHeap->Unmap(0, nullptr);
-	}
-
-	PerformResourceBarrier(aDx12.myCommandList, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
-
-	aDx12.myCommandList->CopyBufferRegion(resource.Get(), 0, uploadHeap.Get(), 0, bufferSize);
-
-	PerformResourceBarrier(aDx12.myCommandList, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
-
+	// TODO: Update views on removal
+	
 	// vertex buffer view
 	{
 		vbv = {};
-		vbv.BufferLocation = resource->GetGPUVirtualAddress();
-		vbv.StrideInBytes = sizeof(Vertex);
 		vbv.SizeInBytes = static_cast<UINT>(sizeof(Vertex) * VertexCount());
+		vbv.BufferLocation = aBuffers->vertexBuffer.resource->GetGPUVirtualAddress() + vbv.SizeInBytes;
+		vbv.StrideInBytes = sizeof(Vertex);
 	}
-
+	
 	// index buffer view
 	{
 		ibv = {};
-		ibv.BufferLocation = resource->GetGPUVirtualAddress() + vbv.SizeInBytes;
 		ibv.SizeInBytes = static_cast<UINT>(sizeof(UINT16) * IndexCount());
+		vbv.BufferLocation = aBuffers->indexBuffer.resource->GetGPUVirtualAddress() + vbv.SizeInBytes;
 		ibv.Format = DXGI_FORMAT_R16_UINT; // DXGI_FORMAT_R32_UINT
 	}
+
+	IResource::LoadToGPU(aDx12, aBuffers);
+	
+	
+	// size_t vertexSize = sizeof(Vertex) * vertexCount;
+	// size_t indexSize = sizeof(UINT16) * indexCount;
+	// size_t bufferSize = vertexSize + indexSize;
+	//
+	// aDx12->myDevice->CreateCommittedResource(
+	// 	&keep(CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT)),
+	// 	D3D12_HEAP_FLAG_NONE,
+	// 	&keep(CD3DX12_RESOURCE_DESC::Buffer(bufferSize)),
+	// 	D3D12_RESOURCE_STATE_COMMON,
+	// 	nullptr,
+	// 	IID_PPV_ARGS(&resource)
+	// );
+	// NAME_D3D12_OBJECT(resource);
+	//
+	// {
+	// 	D3D12_HEAP_PROPERTIES heapProperties = {};
+	// 	heapProperties.Type = D3D12_HEAP_TYPE_UPLOAD;
+	//
+	// 	D3D12_RESOURCE_DESC resourceDesc = {};
+	// 	resourceDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	// 	resourceDesc.Width = bufferSize;
+	// 	resourceDesc.Height = 1;
+	// 	resourceDesc.DepthOrArraySize = 1;
+	// 	resourceDesc.MipLevels = 1;
+	// 	resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
+	// 	resourceDesc.SampleDesc.Count = 1;
+	// 	resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	//
+	//
+	// 	HRESULT hr = aDx12->myDevice->CreateCommittedResource(
+	// 		&heapProperties,
+	// 		D3D12_HEAP_FLAG_NONE,
+	// 		&resourceDesc,
+	// 		D3D12_RESOURCE_STATE_GENERIC_READ,  // The upload heap state is generic read
+	// 		nullptr,
+	// 		IID_PPV_ARGS(&uploadHeap)
+	// 	);
+	//
+	// 	if (!uploadHeap)
+	// 		throw  std::runtime_error("Upload heap creation failed.");
+	//
+	// 	NAME_D3D12_OBJECT(uploadHeap);
+	//
+	// 	void* mappedData = nullptr;
+	// 	ThrowIfFailed(uploadHeap->Map(0, nullptr, &mappedData));
+	//
+	// 	memcpy(mappedData, Vertices(), vertexSize);
+	// 	memcpy(static_cast<char*>(mappedData) + vertexSize, Indices(), indexSize);
+	//
+	// 	uploadHeap->Unmap(0, nullptr);
+	// }
+	//
+	// PerformResourceBarrier(aDx12->myCommandList, D3D12_RESOURCE_STATE_COMMON, D3D12_RESOURCE_STATE_COPY_DEST);
+	//
+	// aDx12->myCommandList->CopyBufferRegion(resource.Get(), 0, uploadHeap.Get(), 0, bufferSize);
+	//
+	// PerformResourceBarrier(aDx12->myCommandList, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER);
+	//
 }
 
-void Mesh::OnGPULoadComplete(class DX12& aDx12)
+void Mesh::OnGPULoadComplete(class DX12* aDx12, struct ResourceBuffers* aBuffers)
 {
-	IResource::OnGPULoadComplete(aDx12);
+	IResource::OnGPULoadComplete(aDx12, aBuffers);
 //#ifndef _DEBUG
-	UnloadCPU(aDx12);
+	UnloadCPU(aDx12, aBuffers);
 //#endif
 }
 
-void Mesh::UnloadCPU(class DX12&)
+void Mesh::UnloadCPU(class DX12* aDx12, struct ResourceBuffers* aBuffers)
 {
 	Internal_UnloadCPU();
 }

@@ -18,6 +18,8 @@
 #include <FrameBuffer.h>
 
 #include "EditorWindow.h"
+#include "IndexBuffer.h"
+#include "VertexBuffer.h"
 
 using Microsoft::WRL::ComPtr;
 
@@ -29,6 +31,7 @@ public:
 
     virtual bool WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) override;
     virtual void OnInit() override;
+    virtual void OnUpdate() override;
     virtual void OnBeginFrame() override;
     virtual void OnEndFrame() override;
     virtual void OnDestroy() override;
@@ -40,7 +43,6 @@ protected:
     DX12 dx12;
     Camera camera;
     ResourceLoader resourceLoader;
-
 
     void UpdateFrameBuffer();
 };

@@ -80,6 +80,8 @@ void GameWindow::OnInit()
 
 void GameWindow::OnUpdate()
 {
+	D3D12Window::OnUpdate();
+	
 	if (textures.size() == 0)
 	{
 		resourceLoader.LoadResource<Texture>(new Texture(), [&](Texture* aResource) {
@@ -245,16 +247,20 @@ void GameWindow::OnRender()
 			if (boundTextures[i] == textures[i]->Index())
 				continue;
 
-			if (!textures[i]->Bind(i, dx12))
+			if (!textures[i]->Bind(i, &dx12))
 				continue;
 
 			boundTextures[i] = textures[i]->Index();
 		}
 	}
-
+	
 	if (meshes.size() == 0)
 		return;
 
+	dx12.instanceBuffer.Update(dx12, meshes[0].instances);
+	resourceLoader.GetBuffers().vertexBuffer.Update(&dx12);
+	resourceLoader.GetBuffers().indexBuffer.Update(&dx12);
+	
 	for (size_t meshIndex = 0; meshIndex < meshes.size(); ++meshIndex)
 	{
 		if (!meshes[meshIndex].mesh->GPUInitialized())
@@ -275,11 +281,5 @@ void GameWindow::OnRender()
 		//meshes[meshIndex].buffer.OnEndFrame(&dx12);
 	}
 
-	dx12.instanceBuffer.Update(dx12, meshes[0].instances);
-	dx12.myCommandList->IASetVertexBuffers(0, 1, &meshes[0].mesh->VertexBufferView());
-	dx12.myCommandList->IASetIndexBuffer(&meshes[0].mesh->IndexBufferView());
-	dx12.myCommandList->IASetVertexBuffers(1, 1, &dx12.instanceBuffer.instanceBufferView);
-	ShaderCompiler::GetPSO(dx12.currentPSO).Set(dx12);
-	// ShaderCompiler::GetPSO(dx12.currentComputePSO).Set(dx12);
 }
 

@@ -4,8 +4,8 @@
 #include "DXHelper.h"
 #include "ShaderCompiler.h"
 
-ResourceLoader::ResourceLoader(DX12& aDx12) :
-	dx12(aDx12)
+ResourceLoader::ResourceLoader(DX12* aDx12) :
+	dx12(aDx12), buffers()
 {
 }
 
@@ -13,8 +13,8 @@ ResourceLoader::~ResourceLoader()
 {
 	for (IResource* resource : activeResources)
 	{
-		resource->UnloadGPU(dx12);
-		resource->UnloadCPU(dx12);
+		resource->UnloadGPU(dx12, &buffers);
+		resource->UnloadCPU(dx12, &buffers);
 		delete resource;
 	}
 	activeResources.clear();
@@ -22,9 +22,9 @@ ResourceLoader::~ResourceLoader()
 
 void ResourceLoader::Update()
 {
-	OnLoadedCallback<class Texture>::Callback ccc = [&](class Texture*) {};
-	OnLoadedCallback<class Texture> c(ccc);
-
+	// buffers.vertexBuffer.Update(dx12);
+	// buffers.indexBuffer.Update(dx12);
+	
 	if (resourcesToLoad.size() == 0)
 		return;
 
@@ -32,7 +32,7 @@ void ResourceLoader::Update()
 
 	for (PendingResource& resource : resourcesToLoad)
 	{
-		resource.resource->LoadToGPU(dx12);
+		resource.resource->LoadToGPU(dx12, &buffers);
 	}
 
 	ExitLoad();
@@ -41,7 +41,7 @@ void ResourceLoader::Update()
 	{
 		IResource* resource = pending.resource;
 		resource->resourceIndex = resourceCounter++;
-		resource->OnGPULoadComplete(dx12);
+		resource->OnGPULoadComplete(dx12, &buffers);
 
 		activeResources.push_back(resource);
 
@@ -59,17 +59,17 @@ void ResourceLoader::Update()
 
 void ResourceLoader::PrepareLoad()
 {
-	ThrowIfFailed(dx12.myCommandAllocator[dx12.myFrameIndex]->Reset());
-	ThrowIfFailed(dx12.myCommandList->Reset(dx12.myCommandAllocator[dx12.myFrameIndex].Get(), ShaderCompiler::GetPSO(dx12.currentPSO).state.Get()));
+	ThrowIfFailed(dx12->myCommandAllocator[dx12->myFrameIndex]->Reset());
+	ThrowIfFailed(dx12->myCommandList->Reset(dx12->myCommandAllocator[dx12->myFrameIndex].Get(), ShaderCompiler::GetPSO(dx12->currentPSO).state.Get()));
 }
 
 void ResourceLoader::ExitLoad()
 {
-	ThrowIfFailed(dx12.myCommandList->Close());
+	ThrowIfFailed(dx12->myCommandList->Close());
 
 	// Execute the command list
-	ID3D12CommandList* commandLists[] = { dx12.myCommandList.Get() };
-	dx12.myCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
+	ID3D12CommandList* commandLists[] = { dx12->myCommandList.Get() };
+	dx12->myCommandQueue->ExecuteCommandLists(_countof(commandLists), commandLists);
 
-	dx12.WaitForGPU();
+	dx12->WaitForGPU();
 }

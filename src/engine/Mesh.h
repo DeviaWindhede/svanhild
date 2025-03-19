@@ -10,9 +10,9 @@ public:
 
 	void LoadMeshData(const std::vector<Vertex>& aVertices, const std::vector<UINT16>& aIndices);
 	
-	virtual void LoadToGPU(class DX12& aDx12) override;
-	virtual void OnGPULoadComplete(class DX12& aDx12) override;
-	virtual void UnloadCPU(class DX12& aDx12) override;
+	virtual void LoadToGPU(class DX12* aDx12, struct ResourceBuffers* aBuffers) override;
+	virtual void OnGPULoadComplete(class DX12* aDx12, struct ResourceBuffers* aBuffers) override;
+	virtual void UnloadCPU(class DX12* aDx12, struct ResourceBuffers* aBuffers) override;
 	
 	//Vertex* Vertices() const			{ return (Vertex*)data; }
 	//UINT16*	Indices() const				{ return (UINT16*)(data + vertexCount * sizeof(Vertex)); }

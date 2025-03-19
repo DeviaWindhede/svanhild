@@ -5,6 +5,9 @@
 #include <functional>
 #include <memory>
 
+#include "IndexBuffer.h"
+#include "VertexBuffer.h"
+
 class IFunction {
 public:
 	virtual ~IFunction() = default;
@@ -38,10 +41,23 @@ struct ModelData
 	size_t indexBaseLocation = 0;
 };
 
+struct ResourceBuffers
+{
+	VertexBuffer vertexBuffer;
+	IndexBuffer indexBuffer;
+
+	ResourceBuffers() :
+	vertexBuffer(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER),
+	indexBuffer(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_INDEX_BUFFER)
+	{
+		
+	}
+};
+
 class ResourceLoader
 {
 public:
-	ResourceLoader(DX12& aDx12);
+	ResourceLoader(DX12* aDx12);
 	~ResourceLoader();
 
 	void Update();
@@ -55,6 +71,8 @@ public:
 			aOnLoadedCallback ? new OnLoadedCallback<T>(aOnLoadedCallback) : nullptr
 		});
 	}
+
+	ResourceBuffers& GetBuffers() { return buffers; }
 private:
 	void PrepareLoad();
 	void ExitLoad();
@@ -63,8 +81,9 @@ private:
 	std::vector<PendingResource> resourcesToLoad;
 	std::vector<class IResource*> activeResources;
 	UINT resourceCounter = 0;
+	ResourceBuffers buffers{};
 	// TODO: Custom heap allocator
 
-	DX12& dx12;
+	DX12* dx12;
 };
 

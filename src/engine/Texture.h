@@ -8,11 +8,11 @@ class Texture : public IResource
 {
 public:
     virtual ~Texture() override;
-	virtual void LoadToGPU(class DX12& aDx12) override;
-    virtual void OnGPULoadComplete(class DX12& aDx12) override;
-    virtual void UnloadCPU(class DX12& aDx12) override;
+	virtual void LoadToGPU(class DX12* aDx12, struct ResourceBuffers*) override;
+    virtual void OnGPULoadComplete(class DX12* aDx12, struct ResourceBuffers*) override;
+    virtual void UnloadCPU(class DX12* aDx12, struct ResourceBuffers*) override;
 
-    bool Bind(UINT aSlot, class DX12& aDx12);
+    bool Bind(UINT aSlot, class DX12* aDx12);
 private:
     static const UINT TextureWidth = 256;
     static const UINT TextureHeight = 256;

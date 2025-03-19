@@ -7,7 +7,7 @@ Texture::~Texture()
 
 }
 
-void Texture::LoadToGPU(DX12& aDx12)
+void Texture::LoadToGPU(DX12* aDx12, ResourceBuffers*)
 {
 	// Create the texture.
 	{
@@ -25,7 +25,7 @@ void Texture::LoadToGPU(DX12& aDx12)
 
 		{
 			auto properies = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_DEFAULT);
-			ThrowIfFailed(aDx12.myDevice->CreateCommittedResource(
+			ThrowIfFailed(aDx12->myDevice->CreateCommittedResource(
 				&properies,
 				D3D12_HEAP_FLAG_NONE,
 				&textureDesc,
@@ -40,7 +40,7 @@ void Texture::LoadToGPU(DX12& aDx12)
 			auto properties = CD3DX12_HEAP_PROPERTIES(D3D12_HEAP_TYPE_UPLOAD);
 			auto desc = CD3DX12_RESOURCE_DESC::Buffer(uploadBufferSize);
 			// Create the GPU upload buffer.
-			ThrowIfFailed(aDx12.myDevice->CreateCommittedResource(
+			ThrowIfFailed(aDx12->myDevice->CreateCommittedResource(
 				&properties,
 				D3D12_HEAP_FLAG_NONE,
 				&desc,
@@ -59,13 +59,13 @@ void Texture::LoadToGPU(DX12& aDx12)
 			textureData.RowPitch = TextureWidth * TexturePixelSize;
 			textureData.SlicePitch = textureData.RowPitch * TextureHeight;
 
-			UpdateSubresources(aDx12.myCommandList.Get(), resource.Get(), uploadHeap.Get(), 0, 0, 1, &textureData);
+			UpdateSubresources(aDx12->myCommandList.Get(), resource.Get(), uploadHeap.Get(), 0, 0, 1, &textureData);
 			auto barrier = CD3DX12_RESOURCE_BARRIER::Transition(
 				resource.Get(),
 				D3D12_RESOURCE_STATE_COPY_DEST,
 				D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE
 			);
-			aDx12.myCommandList->ResourceBarrier(1, &barrier);
+			aDx12->myCommandList->ResourceBarrier(1, &barrier);
 		}
 
 		// Describe and create a SRV for the texture.
@@ -75,35 +75,35 @@ void Texture::LoadToGPU(DX12& aDx12)
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MipLevels = 1;
 
-		descriptorHandle = aDx12.mySrvStagingHeap.GetNewHeapHandle();
+		descriptorHandle = aDx12->mySrvStagingHeap.GetNewHeapHandle();
 
-		aDx12.myDevice->CreateShaderResourceView(resource.Get(), &srvDesc, descriptorHandle.cpuHandle);
+		aDx12->myDevice->CreateShaderResourceView(resource.Get(), &srvDesc, descriptorHandle.cpuHandle);
 	}
 }
 
-void Texture::OnGPULoadComplete(class DX12& aDx12)
+void Texture::OnGPULoadComplete(class DX12* aDx12, struct ResourceBuffers* aBuffers)
 {
-	IResource::OnGPULoadComplete(aDx12);
+	IResource::OnGPULoadComplete(aDx12, aBuffers);
 	uploadHeap = nullptr;
 }
 
-void Texture::UnloadCPU(DX12& aDx12)
+void Texture::UnloadCPU(DX12* aDx12, struct ResourceBuffers*)
 {
-	aDx12.mySrvStagingHeap.FreeHeapHandle(descriptorHandle);
+	aDx12->mySrvStagingHeap.FreeHeapHandle(descriptorHandle);
 }
 
-bool Texture::Bind(UINT aSlot, DX12& aDx12)
+bool Texture::Bind(UINT aSlot, DX12* aDx12)
 {
 	if (!GPUInitialized())
 		return false;
 
 	D3D12_CPU_DESCRIPTOR_HANDLE srcHandle = descriptorHandle.cpuHandle;
-	D3D12_CPU_DESCRIPTOR_HANDLE destHandle = aDx12.mySrvHeap.cpuStart;
+	D3D12_CPU_DESCRIPTOR_HANDLE destHandle = aDx12->mySrvHeap.cpuStart;
 
-	UINT descriptorSize = aDx12.myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-	destHandle.ptr = aDx12.mySrvHeap.cpuStart.ptr + aSlot * descriptorSize;
+	UINT descriptorSize = aDx12->myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	destHandle.ptr = aDx12->mySrvHeap.cpuStart.ptr + aSlot * descriptorSize;
 
-	aDx12.myDevice->CopyDescriptorsSimple(1, destHandle, srcHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	aDx12->myDevice->CopyDescriptorsSimple(1, destHandle, srcHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	return true;
 }
