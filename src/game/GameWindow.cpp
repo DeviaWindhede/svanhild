@@ -23,11 +23,6 @@ void GameWindow::OnInit()
 {
 	D3D12Window::OnInit();
 
-	meshes.resize(2);
-	meshes[0].mesh = new CubePrimitive();
-	((CubePrimitive*)meshes[0].mesh)->InitPrimitive();
-
-
 	// Create and record the bundle.
 	//{
 	//	ThrowIfFailed(dx12.myDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_BUNDLE, dx12.myBundleAllocator.Get(), dx12.myPipelineState.Get(), IID_PPV_ARGS(&dx12.myBundle)));
@@ -41,41 +36,61 @@ void GameWindow::OnInit()
 	//	ThrowIfFailed(dx12.myBundle->Close());
 	//}
 
+	instances.clear();
+	meshes.clear();
 
+	meshes.push_back({});
+	meshes.back().mesh = new SpherePrimitive();
+	((SpherePrimitive*)meshes.back().mesh)->InitPrimitive();
+	
+	meshes.push_back({});
+	meshes.back().mesh = new CubePrimitive();
+	((CubePrimitive*)meshes.back().mesh)->InitPrimitive();
+	
+	
+	std::vector<DrawIndirectArgs> args;
+	std::vector<UINT> instanceOffsets;
+	
 	float offset = 5.0f;
-
 	size_t amount = 80;
-	for (size_t z = 0; z < amount; z++)
-		//for (size_t y = 0; y < amount; y++)
-		//for (size_t x = 0; x < amount; x++)
+	for (int i = 0; i < meshes.size(); i++)
 	{
-		auto S = DirectX::XMMatrixScaling(1.0f, 1.0f, 1.0f);
-		auto R = DirectX::XMMatrixRotationY(0);
-		auto T = DirectX::XMMatrixTranslation(offset, offset, offset * z + 10.0f);
-		//auto T = DirectX::XMMatrixTranslation(x * offset, y * offset, z * offset + 10.0f );
-		//auto T = DirectX::XMMatrixTranslation(x * offset, y * offset, z * offset);
+		instanceOffsets.push_back(instances.size());
+		meshes[i].instanceOffset = instances.size();
+		for (int j = 0; j < amount; j++)
+		{
+			auto S = DirectX::XMMatrixScaling(1.0f, 1.0f, 1.0f);
+			auto R = DirectX::XMMatrixRotationY(0);
+			auto T = DirectX::XMMatrixTranslation(offset, offset + i * 10.0f, offset * j + 10.0f);
 
-		meshes[0].instances.push_back({ S * R * T , meshes[0].mesh->Index() });
+			instances.push_back({ S * R * T , meshes[1].mesh->Index() });
+			meshes[i].instanceCount++;
+			if (i > 0)
+			{
+				meshes[i].mesh->verticesIndex = meshes[i - 1].mesh->verticesIndex + meshes[i - 1].mesh->VertexCount();
+				meshes[i].mesh->indeciesIndex = meshes[i - 1].mesh->indeciesIndex + meshes[i - 1].mesh->IndexCount();
+			}
+		}
 	}
-	//meshes[0].buffer.Create(&dx12);
 
-
-	meshes[1].mesh = new SpherePrimitive();
-	((SpherePrimitive*)meshes[1].mesh)->InitPrimitive();
-	for (size_t z = 0; z < amount; z++)
-		//for (size_t y = 0; y < amount; y++)
-		//for (size_t x = 0; x < amount; x++)
+	for (size_t i = 0; i < instanceOffsets.size(); i++)
 	{
-		auto S = DirectX::XMMatrixScaling(1.0f, 1.0f, 1.0f);
-		auto R = DirectX::XMMatrixRotationY(0);
-		auto T = DirectX::XMMatrixTranslation(offset, offset + 10.0f, offset * z + 10.0f);
-		//auto T = DirectX::XMMatrixTranslation(x * offset, y * offset, z * offset + 10.0f );
-		//auto T = DirectX::XMMatrixTranslation(x * offset, y * offset, z * offset);
-
-		meshes[1].instances.push_back({ S * R * T , meshes[1].mesh->Index() });
+		size_t baseVertex = meshes[i].mesh->verticesIndex;
+		size_t startIndex = meshes[i].mesh->indeciesIndex;
+		
+		args.push_back(
+		{
+			.IndexCountPerInstance = static_cast<UINT>(meshes[i].mesh->IndexCount()),
+			.InstanceCount = meshes[i].instanceCount,
+			.StartIndexLocation =  static_cast<UINT>(startIndex),
+			.BaseVertexLocation = static_cast<UINT>(baseVertex),
+			.StartInstanceLocation = meshes[i].instanceOffset
+		});
 	}
 	//meshes[1].buffer.Create(&dx12);
-
+	
+	dx12.meshRenderer.AddItem(dx12.myDevice, args.data(), args.size());
+	// dx12.meshRenderer.AddCommand(args);
 }
 
 void GameWindow::OnUpdate()
@@ -257,29 +272,8 @@ void GameWindow::OnRender()
 	if (meshes.size() == 0)
 		return;
 
-	dx12.instanceBuffer.Update(dx12, meshes[0].instances);
-	resourceLoader.GetBuffers().vertexBuffer.Update(&dx12);
-	resourceLoader.GetBuffers().indexBuffer.Update(&dx12);
-	
-	for (size_t meshIndex = 0; meshIndex < meshes.size(); ++meshIndex)
-	{
-		if (!meshes[meshIndex].mesh->GPUInitialized())
-			return;
-
-		//meshes[meshIndex].buffer.Update(dx12, meshes[meshIndex].instances);
-		//dx12.myCommandList->IASetVertexBuffers(0, 1, &meshes[meshIndex].mesh->VertexBufferView());
-		//dx12.myCommandList->IASetIndexBuffer(&meshes[meshIndex].mesh->IndexBufferView());
-		//dx12.myCommandList->IASetVertexBuffers(1, 1, &meshes[meshIndex].buffer.instanceBufferView);
-		//ShaderCompiler::GetPSO(0).Set(dx12);
-
-		//dx12.myCommandList->DrawIndexedInstanced(
-		//	meshes[meshIndex].mesh->IndexCount(),
-		//	meshes[meshIndex].instances.size(),
-		//	0, 0, 0
-		//);
-
-		//meshes[meshIndex].buffer.OnEndFrame(&dx12);
-	}
-
+	dx12.instanceBuffer.Update(dx12, instances);
+	dx12.meshRenderer.Update(dx12.myCommandList);
+	resourceLoader.OnRender();
 }
 

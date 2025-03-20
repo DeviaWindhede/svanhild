@@ -6,17 +6,17 @@ VertexBuffer::VertexBuffer(D3D12_RESOURCE_STATES aResourceState) : ResourceBuffe
     vbv.StrideInBytes = sizeof(Vertex);
 }
 
-void VertexBuffer::Create(const DX12* aDx12, size_t aSize)
+void VertexBuffer::Create(ComPtr<ID3D12Device>& aDevice, size_t aSize)
 {
-    ResourceBuffer<Vertex>::Create(aDx12, aSize);
+    ResourceBuffer<Vertex>::Create(aDevice, aSize);
     
     vbv.SizeInBytes = static_cast<UINT>(sizeof(Vertex) * gpuSize);
     vbv.BufferLocation = resource->GetGPUVirtualAddress();
 }
 
-void VertexBuffer::Update(const DX12* aDx12)
+void VertexBuffer::Update(ComPtr<ID3D12GraphicsCommandList>& aCommandList)
 {
-    ResourceBuffer<Vertex>::Update(aDx12);
+    ResourceBuffer<Vertex>::Update(aCommandList);
 
     if (!resource)
         return;
@@ -25,13 +25,13 @@ void VertexBuffer::Update(const DX12* aDx12)
     vbv.BufferLocation = resource->GetGPUVirtualAddress();
 }
 
-size_t VertexBuffer::AddItem(const DX12* aDx12, Vertex* aData, size_t aSize)
+size_t VertexBuffer::AddItem(ComPtr<ID3D12Device>& aDevice, Vertex* aData, size_t aSize)
 {
-    size_t index = ResourceBuffer::AddItem(aDx12, aData, aSize);
+    size_t index = ResourceBuffer::AddItem(aDevice, aData, aSize);
     return index;
 }
 
-void VertexBuffer::RemoveItem(const DX12* aDx12, size_t aIndex)
+void VertexBuffer::RemoveItem(ComPtr<ID3D12Device>& aDevice, size_t aIndex)
 {
-    ResourceBuffer::RemoveItem(aDx12, aIndex);
+    ResourceBuffer::RemoveItem(aDevice, aIndex);
 }

@@ -141,7 +141,7 @@ void InstanceBuffer::Update(DX12& aDx12, const std::vector<InstanceData>& aInsta
 	if (aInstances.size() > heapSize)
 	{
 		instanceBuffer.Reset();
-		Create(&aDx12, DX12::NextPowerOfTwo(aInstances.size()));
+		Create(&aDx12, NextPowerOfTwo(aInstances.size()));
 	}
 
 	void* data = nullptr;
@@ -175,5 +175,6 @@ void InstanceBuffer::Initialize(DX12* aDx12)
 
 void InstanceBuffer::OnEndFrame(DX12* aDx12)
 {
+	cpuSize = uploadOffset;
 	uploadOffset = 0;
 }

@@ -5,15 +5,15 @@
 #include <IWindow.h>
 #include <ShaderCompiler.h>
 
-static inline UINT AlignForUavCounter(UINT bufferSize)
-{
-    const UINT alignment = D3D12_UAV_COUNTER_PLACEMENT_ALIGNMENT;
-    return (bufferSize + (alignment - 1)) & ~(alignment - 1);
-}
+// static inline UINT AlignForUavCounter(UINT bufferSize)
+// {
+//     const UINT alignment = D3D12_UAV_COUNTER_PLACEMENT_ALIGNMENT;
+//     return (bufferSize + (alignment - 1)) & ~(alignment - 1);
+// }
 
-const UINT NumberOfMeshes = 256;
-const UINT CommandSizePerFrame = NumberOfMeshes * sizeof(DrawIndirectArgs);
-const UINT CommandBufferCounterOffset = AlignForUavCounter(CommandSizePerFrame);
+// const UINT NumberOfMeshes = 256;
+// const UINT CommandSizePerFrame = NumberOfMeshes * sizeof(DrawIndirectArgs);
+// const UINT CommandBufferCounterOffset = AlignForUavCounter(CommandSizePerFrame);
 
 DX12::DX12(UINT aWidth, UINT aHeight, bool aUseWarpDevice) :
     myFrameIndex(0),
@@ -596,7 +596,7 @@ void DX12::LoadPipeline()
     }
 
     instanceBuffer.Create(this);
-    meshRenderer.Create(this);
+    meshRenderer.Create(this, 0);
 
     // Close the command list and execute it to begin the initial GPU setup.
     ThrowIfFailed(myCommandList->Close());
@@ -620,9 +620,6 @@ void DX12::PrepareRender()
         myComputeCommandList->SetComputeRootSignature(myComputeRootSignature.Get());
         ShaderCompiler::GetPSO(currentComputePSO).Set(*this);
 
-        ID3D12DescriptorHeap* ppHeaps[] = {myComputeCbvSrvUavHeap.descriptorHeap};
-        myComputeCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
-        
         meshRenderer.Dispatch(this);
     }
     ThrowIfFailed(myComputeCommandList->Close());

@@ -31,7 +31,7 @@ public:
     InstanceData* cpuInstanceData = nullptr;
 
     D3D12_VERTEX_BUFFER_VIEW instanceBufferView;
-
+    size_t GetCpuSize() const { return cpuSize; }
 private:
 
     std::queue<size_t> availableIndices{};

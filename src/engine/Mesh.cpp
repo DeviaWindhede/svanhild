@@ -36,10 +36,11 @@ void Mesh::PerformResourceBarrier(
 
 void Mesh::LoadToGPU(class DX12* aDx12, struct ResourceBuffers* aBuffers)
 {
-	aBuffers->vertexBuffer.AddItem(aDx12, vertices, vertexCount);
-	aBuffers->indexBuffer.AddItem(aDx12, indices, indexCount);
+	verticesIndex = aBuffers->vertexBuffer.AddItem(aDx12->myDevice, vertices, vertexCount);
+	indeciesIndex = aBuffers->indexBuffer.AddItem(aDx12->myDevice, indices, indexCount);
 
 	// TODO: Update views on removal
+	// TODO: fix view buffer location to account for index
 	
 	// vertex buffer view
 	{

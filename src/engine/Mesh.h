@@ -23,6 +23,9 @@ public:
 
 	const D3D12_VERTEX_BUFFER_VIEW& VertexBufferView() const { return vbv; }
 	const D3D12_INDEX_BUFFER_VIEW& IndexBufferView() const { return ibv; }
+
+	size_t verticesIndex = 0;
+	size_t indeciesIndex = 0;
 private:
 	void Internal_UnloadCPU();
 	void PerformResourceBarrier(ComPtr<ID3D12GraphicsCommandList>& aCommandList, D3D12_RESOURCE_STATES aPrevious, D3D12_RESOURCE_STATES aNewState) const;

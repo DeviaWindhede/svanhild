@@ -16,27 +16,48 @@ RWStructuredBuffer<DrawIndirectArgs> outputCommands : register(u0); // output dr
 // AppendStructuredBuffer<DrawIndirectArgs> outputCommands : register(u0); // output draw commands
 
 
-#define threadBlockSize 128
+#define threadBlockSize 64
 
 [numthreads(threadBlockSize, 1, 1)]
-void main(uint3 groupId : SV_GroupID, uint groupIndex : SV_GroupIndex, uint3 DTid : SV_DispatchThreadID)
+void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3 Gid : SV_GroupID)
 {
-    uint index = (groupId.x * threadBlockSize) + groupIndex;
-    
-    if (DTid.x >= 1)
+    if (DTid.x > 0)
         return;
     
-    if (index >= 1)
-        return;
-
-    // InstanceData instance = instances[index];
+    //outputCommands[0] = inputCommands[0];
+    uint instanceIndex = DTid.x; // Unique instance index
     
-    // DrawIndirectArgs args;
-    // args.BaseVertexLocation = 0;
-    // args.IndexCountPerInstance = 36;
-    // args.InstanceCount = 1;
-    // args.StartIndexLocation = 0;
-    // args.StartInstanceLocation = 0;
-    // outputCommands.Append(args);
-    outputCommands[0] = inputCommands[0];
+     // TODO: SET ALL THIS INFO AS CONSTANT DATA
+     {
+        uint numInstances;
+        uint stride;
+        instances.GetDimensions(numInstances, stride);
+        if (instanceIndex >= numInstances)
+            return;
+    }
+    
+    uint commandIndex = 0;
+     {
+        uint numCommands;
+        uint stride;
+        instances.GetDimensions(numCommands, stride);
+         
+         // Find which draw command this instance belongs to
+        uint accumulatedInstances = 0;
+        for (uint i = 0; i < numCommands; i++)
+        {
+            accumulatedInstances += inputCommands[i].InstanceCount;
+            if (instanceIndex < accumulatedInstances)
+            {
+                commandIndex = i;
+                break;
+            }
+        }
+    
+    }
+    
+    if (inputCommands[commandIndex].InstanceCount == 0)
+        return;
+    
+    outputCommands[commandIndex] = inputCommands[commandIndex];
 }

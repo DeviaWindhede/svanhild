@@ -12,16 +12,6 @@ using Microsoft::WRL::ComPtr;
 class DX12
 {
 public:
-    // TODO: MOVE TO MATH
-    inline static size_t NextPowerOfTwo(size_t aValue)
-    {
-        if (aValue <= 1)
-            return 1;
-        unsigned long index;
-        _BitScanReverse64(&index, aValue - 1);
-        return 1ull << (index + 1);
-    }
-    
     DX12(UINT aWidth, UINT aHeight, bool aUseWarpDevice);
     ~DX12();
 

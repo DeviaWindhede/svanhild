@@ -60,7 +60,8 @@ public:
 	ResourceLoader(DX12* aDx12);
 	~ResourceLoader();
 
-	void Update();
+	void BeginFrame();
+	void OnRender();
 
 	// TODO: Add proper mesh and texture loaders at integrate this function
 	template<typename T = class IResource>

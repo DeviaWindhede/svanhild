@@ -1,7 +1,7 @@
 ﻿#pragma once
 #include "ClassHelper.h"
 
-#define USE_IMGUI 1
+#define USE_IMGUI 0
 
 class EditorWindow
 {

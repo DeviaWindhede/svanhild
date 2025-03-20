@@ -258,3 +258,12 @@ template <class T>
 constexpr auto& keep(T&& x) noexcept {
     return x;
 }
+
+inline size_t NextPowerOfTwo(size_t aValue)
+{
+    if (aValue <= 1)
+        return 1;
+    unsigned long index;
+    _BitScanReverse64(&index, aValue - 1);
+    return 1ull << (index + 1);
+}

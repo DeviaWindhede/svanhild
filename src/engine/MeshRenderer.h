@@ -1,5 +1,7 @@
 ﻿#pragma once
 #include "DXHelper.h"
+#include "ResourceBuffer.h"
+// #include "ResourceBuffer.h"
 // #include "ResourceBuffer.h"
 
 struct DrawIndirectArgs {
@@ -22,30 +24,29 @@ class Mesh;
  *	6. Lägg till en defragmentation funktion
  */
 
-class MeshRenderer
+class MeshRenderer final : public ResourceBuffer<DrawIndirectArgs>
 {
 public:
     friend class DX12;
+
+    explicit MeshRenderer();
+    void Create(class DX12* aDx12, size_t aSize);
+    void Update(ComPtr<ID3D12GraphicsCommandList>& aCommandList) override;
     
-    void Create(class DX12* aDx12);
-    void Update();
-
-
     void Dispatch(DX12* aDx12);
     void PrepareRender(DX12* aDx12);
     void ExecuteIndirectRender(DX12* aDx12);
     void OnEndFrame(DX12* aDx12);
 private:
-    UINT GetFrameGroupCount() const;
+    void Create(ComPtr<ID3D12Device>& aDevice, size_t aSize) override;
+    void CreateResourceViews();
+    static UINT GetFrameGroupCount(size_t aSize);
     
     CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle;
     CD3DX12_CPU_DESCRIPTOR_HANDLE uavArgsHandle;
     
-    ComPtr<ID3D12Resource> inputCommandBuffer = nullptr; // srv
+    // inputCommandBuffer srv
     ComPtr<ID3D12Resource> indirectArgsBuffer = nullptr; // uav
-    ComPtr<ID3D12Resource> commandBufferUpload = nullptr;
-    
-    size_t heapSize = 0;
-	std::vector<DrawIndirectArgs> commands;
-    // ResourceBuffer<Mesh> meshes;
+
+    DX12* dx12 = nullptr;
 };

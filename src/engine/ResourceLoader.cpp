@@ -20,11 +20,8 @@ ResourceLoader::~ResourceLoader()
 	activeResources.clear();
 }
 
-void ResourceLoader::Update()
+void ResourceLoader::BeginFrame()
 {
-	// buffers.vertexBuffer.Update(dx12);
-	// buffers.indexBuffer.Update(dx12);
-	
 	if (resourcesToLoad.size() == 0)
 		return;
 
@@ -55,6 +52,12 @@ void ResourceLoader::Update()
 	}
 
 	resourcesToLoad.clear();
+}
+
+void ResourceLoader::OnRender()
+{
+	buffers.vertexBuffer.Update(dx12->myCommandList);
+	buffers.indexBuffer.Update(dx12->myCommandList);
 }
 
 void ResourceLoader::PrepareLoad()
