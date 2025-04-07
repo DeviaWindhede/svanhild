@@ -29,7 +29,6 @@ public:
         _Outptr_result_maybenull_ IDXGIAdapter1** ppAdapter,
         bool requestHighPerformanceAdapter = false);
 
-    static constexpr UINT FrameCount = 2;
     static constexpr UINT MAX_CBV_COUNT = 1;
     static constexpr UINT MAX_SRV_COUNT = 4096;
     static constexpr UINT MAX_UAV_COUNT = 0; // TODO: add UAV support
@@ -72,9 +71,6 @@ public:
     UINT myRtvDescriptorSize;
     size_t currentPSO = SIZE_T_MAX;
     size_t currentComputePSO = SIZE_T_MAX;
-
-    ComPtr<ID3D12Resource> myProcessedCommandBuffers[FrameCount];
-    ComPtr<ID3D12Resource> myProcessedCommandBufferCounterReset;
 
     MeshRenderer meshRenderer;
     // Synchronization objects

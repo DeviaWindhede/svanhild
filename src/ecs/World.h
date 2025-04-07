@@ -4,7 +4,6 @@
 
 #include "entity/Entity.h"
 #include "entity/EntityManager.h"
-#include "../../game/game/scene/SceneCommon.h"
 
 #include "component/ComponentManager.h"
 #include "system/SystemManager.h"

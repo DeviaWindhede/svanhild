@@ -43,10 +43,12 @@ private:
     static UINT GetFrameGroupCount(size_t aSize);
     
     CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle;
-    CD3DX12_CPU_DESCRIPTOR_HANDLE uavArgsHandle;
+    CD3DX12_CPU_DESCRIPTOR_HANDLE uavArgsHandle[FrameCount];
     
     // inputCommandBuffer srv
-    ComPtr<ID3D12Resource> indirectArgsBuffer = nullptr; // uav
+    ComPtr<ID3D12Resource> indirectArgsBuffer[FrameCount]; // uav
+    ComPtr<ID3D12Resource> myProcessedCommandBuffers[FrameCount];
+    ComPtr<ID3D12Resource> myProcessedCommandBufferCounterReset;
 
     DX12* dx12 = nullptr;
 };

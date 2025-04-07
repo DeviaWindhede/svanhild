@@ -5,7 +5,6 @@
 #include "../entity/Entity.h"
 #include "../component/Component.h"
 #include "../system/System.h"
-#include "../engine/utility/Error.h"
 
 class World;
 

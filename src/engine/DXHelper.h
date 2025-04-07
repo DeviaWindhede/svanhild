@@ -18,6 +18,8 @@
 // referenced by the GPU.
 using Microsoft::WRL::ComPtr;
 
+static constexpr UINT FrameCount = 2;
+
 inline std::string HrToString(HRESULT hr)
 {
     char s_str[64] = {};
