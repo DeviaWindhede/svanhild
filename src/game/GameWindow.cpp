@@ -52,7 +52,7 @@ void GameWindow::OnInit()
 	std::vector<UINT> instanceOffsets;
 	
 	float offset = 5.0f;
-	size_t amount = 80;
+	size_t amount = 180;
 	for (int i = 0; i < meshes.size(); i++)
 	{
 		instanceOffsets.push_back(instances.size());

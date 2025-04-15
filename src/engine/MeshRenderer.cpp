@@ -52,8 +52,9 @@ void MeshRenderer::Dispatch(DX12* aDx12)
 			D3D12_RESOURCE_STATE_UNORDERED_ACCESS
 		);
 		aDx12->myComputeCommandList->ResourceBarrier(1, &barrier);
-		
-		aDx12->myComputeCommandList->Dispatch(GetFrameGroupCount(aDx12->instanceBuffer.GetCpuSize()), 1, 1);
+
+		UINT frameCount = GetFrameGroupCount(aDx12->instanceBuffer.GetCpuSize());
+		aDx12->myComputeCommandList->Dispatch(frameCount, 1, 1);
 	}
 	
 	{
@@ -91,7 +92,7 @@ void MeshRenderer::ExecuteIndirectRender(DX12* aDx12)
 	
 	aDx12->myCommandList->ExecuteIndirect(
 		aDx12->myCommandSignature.Get(), // Predefined signature for DrawIndexedInstanced
-		1,                              // Execute 1 draw call
+		gpuSize,                              // Execute 1 draw call
 		indirectArgsBuffer.Get(),       // Buffer with draw arguments
 		0,                              // Argument buffer offset
 		nullptr,                         // No counters

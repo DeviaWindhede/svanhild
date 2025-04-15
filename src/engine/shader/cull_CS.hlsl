@@ -21,14 +21,11 @@ RWStructuredBuffer<DrawIndirectArgs> outputCommands : register(u0); // output dr
 [numthreads(threadBlockSize, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3 Gid : SV_GroupID)
 {
-    if (DTid.x > 0)
-        return;
+    uint instanceIndex = DTid.x;
+    uint commandIndex = 0;
     
-    //outputCommands[0] = inputCommands[0];
-    uint instanceIndex = DTid.x; // Unique instance index
-    
-     // TODO: SET ALL THIS INFO AS CONSTANT DATA
-     {
+    // TODO: SET ALL THIS INFO AS CONSTANT DATA
+    {
         uint numInstances;
         uint stride;
         instances.GetDimensions(numInstances, stride);
@@ -36,13 +33,12 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3
             return;
     }
     
-    uint commandIndex = 0;
-     {
+    {
         uint numCommands;
         uint stride;
-        instances.GetDimensions(numCommands, stride);
-         
-         // Find which draw command this instance belongs to
+        inputCommands.GetDimensions(numCommands, stride);
+        
+        // Find which draw command this instance belongs to
         uint accumulatedInstances = 0;
         for (uint i = 0; i < numCommands; i++)
         {
@@ -53,11 +49,10 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3
                 break;
             }
         }
-    
     }
     
     if (inputCommands[commandIndex].InstanceCount == 0)
         return;
-    
+        
     outputCommands[commandIndex] = inputCommands[commandIndex];
 }
