@@ -9,6 +9,12 @@ struct DrawIndirectArgs
     uint StartInstanceLocation;
 };
 
+cbuffer RootConstants : register(b0)
+{
+    uint NumInstances;
+    uint NumCommands;
+};
+
 StructuredBuffer<InstanceData> instances : register(t0); // instance data
 StructuredBuffer<DrawIndirectArgs> inputCommands : register(t1); // render commands, i.e mesh info
 
@@ -24,23 +30,13 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3
     uint instanceIndex = DTid.x;
     uint commandIndex = 0;
     
-    // TODO: SET ALL THIS INFO AS CONSTANT DATA
+    if (instanceIndex >= NumInstances)
+        return;
+
     {
-        uint numInstances;
-        uint stride;
-        instances.GetDimensions(numInstances, stride);
-        if (instanceIndex >= numInstances)
-            return;
-    }
-    
-    {
-        uint numCommands;
-        uint stride;
-        inputCommands.GetDimensions(numCommands, stride);
-        
         // Find which draw command this instance belongs to
         uint accumulatedInstances = 0;
-        for (uint i = 0; i < numCommands; i++)
+        for (uint i = 0; i < NumCommands; i++)
         {
             accumulatedInstances += inputCommands[i].InstanceCount;
             if (instanceIndex < accumulatedInstances)

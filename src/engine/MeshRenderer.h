@@ -12,6 +12,21 @@ struct DrawIndirectArgs {
     UINT StartInstanceLocation;
 };
 
+struct RootConstants
+{
+    UINT NumInstances;
+    UINT NumCommands;
+};
+static_assert((sizeof(RootConstants) % sizeof(UINT)) == 0, "Root Signature size must be 32bit value aligned");
+static_assert(sizeof(RootConstants) <= 64, "Root Signature size must be or below 64-bytes");
+
+enum class ComputeRootParameters
+{
+    SrvUavTable,
+    RootConstants,
+    ComputeRootParametersCount
+};
+
 class Mesh;
 
 /*
@@ -38,6 +53,7 @@ public:
     void ExecuteIndirectRender(DX12* aDx12);
     void OnEndFrame(DX12* aDx12);
 private:
+    void UpdateRootConstants(DX12* aDx12);
     void Create(ComPtr<ID3D12Device>& aDevice, size_t aSize) override;
     void CreateResourceViews();
     static UINT GetFrameGroupCount(size_t aSize);
@@ -47,6 +63,9 @@ private:
     
     // inputCommandBuffer srv
     ComPtr<ID3D12Resource> indirectArgsBuffer = nullptr; // uav
-
+    RootConstants rootConstants;
+    
     DX12* dx12 = nullptr;
 };
+
+

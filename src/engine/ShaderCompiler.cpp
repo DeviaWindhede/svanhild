@@ -94,14 +94,16 @@ void ShaderCompiler::WatchFiles(const std::wstring& directory)
 			FILE_NOTIFY_INFORMATION* notification = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(buffer);
 			do
 			{
-				if (notification->Action == FILE_ACTION_RENAMED_OLD_NAME)
+				if (notification->Action & (FILE_ACTION_RENAMED_OLD_NAME | FILE_ACTION_MODIFIED) != 0)
 				{
 					std::wstring fileNameW(notification->FileName, notification->FileNameLength / sizeof(wchar_t));
 					std::string fileName(fileNameW.begin(), fileNameW.end());
 
 					std::wcout << L"Change detected: " << fileNameW << std::endl;
 
-					if (fileName.size() >= 5 && fileName.substr(fileName.size() - 5) == ".hlsl")
+					size_t pos = fileName.find_last_of('.');
+					std::string substr = fileName.substr(pos, 5);
+					if (fileName.size() >= 5 && substr == ".hlsl")
 					{
 						auto currentModificationTime = std::filesystem::last_write_time(directory + L"\\" + fileNameW);
 
@@ -111,7 +113,7 @@ void ShaderCompiler::WatchFiles(const std::wstring& directory)
 							lastModificationTime = currentModificationTime;
 
 							std::lock_guard<std::mutex> lock(instance->shaderAccessMutex);
-							size_t index = GetShader(fileNameW.substr(0, fileNameW.size() - 5)).index;
+							size_t index = GetShader(fileNameW.substr(0, pos)).index;
 
 							if (shadersToRecompile.size() > 0 && shadersToRecompile.back() == index)
 								continue;

@@ -26,10 +26,20 @@ void MeshRenderer::Update(ComPtr<ID3D12GraphicsCommandList>& aCommandList)
 	}
 }
 
+void MeshRenderer::UpdateRootConstants(DX12* aDx12)
+{
+	rootConstants.NumCommands = gpuSize;
+	rootConstants.NumInstances = aDx12->instanceBuffer.GetCpuSize();
+	
+	aDx12->myComputeCommandList->SetComputeRoot32BitConstants(static_cast<UINT>(ComputeRootParameters::RootConstants), sizeof(RootConstants), reinterpret_cast<void*>(&rootConstants), 0);
+}
+
 void MeshRenderer::Dispatch(DX12* aDx12)
 {
 	if (gpuSize == 0)
 		return;
+
+	UpdateRootConstants(aDx12);
 	
 	D3D12_GPU_DESCRIPTOR_HANDLE uavGPUHandle = aDx12->myComputeCbvSrvUavHeap.gpuStart;
 	uavGPUHandle.ptr += aDx12->cbvSrvUavDescriptorSize;
@@ -38,7 +48,7 @@ void MeshRenderer::Dispatch(DX12* aDx12)
 
 	ID3D12DescriptorHeap* descriptorHeaps[] = { aDx12->myComputeCbvSrvUavHeap.descriptorHeap };
 	aDx12->myComputeCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-	aDx12->myComputeCommandList->SetComputeRootDescriptorTable(0, aDx12->myComputeCbvSrvUavHeap.gpuStart); // SRV
+	aDx12->myComputeCommandList->SetComputeRootDescriptorTable(static_cast<UINT>(ComputeRootParameters::SrvUavTable), aDx12->myComputeCbvSrvUavHeap.gpuStart); // SRV
 	//aDx12->myComputeCommandList->SetComputeRootDescriptorTable(1, uavGPUHandle); // UAV for visible instances
 	//aDx12->myComputeCommandList->SetComputeRootDescriptorTable(2, uavArgsGPUHandle); // UAV for indirect draw args
 	
@@ -184,7 +194,6 @@ void MeshRenderer::CreateResourceViews()
 	srvDesc.Buffer.NumElements = gpuSize;
 	srvDesc.Buffer.StructureByteStride = sizeof(DrawIndirectArgs);
 	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
-	//srvDesc.Buffer.FirstElement = frame * heapSize;
 
 	dx12->myDevice->CreateShaderResourceView(resource.Get(), &srvDesc, handle);
 	uavHandle = handle;
@@ -194,7 +203,6 @@ void MeshRenderer::CreateResourceViews()
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavArgsDesc = {};
 	uavArgsDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 	uavArgsDesc.Buffer.FirstElement = 0;
-	// uavArgsDesc.Buffer.NumElements = 1;
 	uavArgsDesc.Buffer.NumElements = gpuSize;
 	uavArgsDesc.Buffer.StructureByteStride = sizeof(DrawIndirectArgs);
 	uavArgsDesc.Buffer.CounterOffsetInBytes = 0;
