@@ -19,6 +19,7 @@ RWStructuredBuffer<DrawIndirectArgs> outputCommands : register(u0); // output dr
 [numthreads(threadBlockSize, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3 Gid : SV_GroupID)
 {
+    return;
     uint instanceIndex = DTid.x;
     uint commandIndex = 0;
 
@@ -48,5 +49,5 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3
     if (inputCommands[commandIndex].InstanceCount == 0)
         return;
         
-    outputCommands[commandIndex] = inputCommands[commandIndex];
+    // outputCommands[commandIndex] = inputCommands[commandIndex];
 }

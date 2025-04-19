@@ -47,10 +47,9 @@ public:
     explicit MeshRenderer();
     void Create(class DX12* aDx12, size_t aSize);
     size_t AddItem(ComPtr<ID3D12Device>& aDevice, DrawIndirectArgs* aData, size_t aSize) override;
-    void Update(ComPtr<ID3D12GraphicsCommandList>& aCommandList) override;
+    void Update(ComPtr<ID3D12GraphicsCommandList>& aComputeCommandList) override;
     
     void Dispatch(DX12* aDx12);
-    void PrepareRender(DX12* aDx12);
     void ExecuteIndirectRender(DX12* aDx12);
     void OnEndFrame(DX12* aDx12);
 private:
@@ -59,11 +58,8 @@ private:
     void CreateResourceViews();
     static UINT GetFrameGroupCount(size_t aSize);
     
-    CD3DX12_CPU_DESCRIPTOR_HANDLE uavHandle;
     CD3DX12_CPU_DESCRIPTOR_HANDLE uavArgsHandle;
     
-    // inputCommandBuffer srv
-    ComPtr<ID3D12Resource> indirectArgsBuffer = nullptr; // uav
     RootConstants rootConstants;
     
     DX12* dx12 = nullptr;

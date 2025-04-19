@@ -13,11 +13,10 @@ enum class SrvOffsets
 {
     InstanceBuffer,
     InstanceCount,
-    CommandInput,
     Count
 };
 
-enum class UavOffsets
+enum class ComputeUavOffsets
 {
     CommandOutput,
     Count
@@ -52,8 +51,13 @@ public:
 
     static constexpr UINT CBV_SIZE = 0; // TODO: Change to 2 here
     static constexpr UINT SRV_SIZE = static_cast<UINT>(SrvOffsets::Count);
-    static constexpr UINT UAV_SIZE = static_cast<UINT>(UavOffsets::Count);
+    static constexpr UINT UAV_SIZE = 0;
     static constexpr UINT CBV_SRV_UAV_SIZE = CBV_SIZE + SRV_SIZE + UAV_SIZE; //* FrameCount; // 2srv + 1uav
+
+    static constexpr UINT COMPUTE_CBV_SIZE = 0; // TODO: Change to 2 here
+    static constexpr UINT COMPUTE_SRV_SIZE = static_cast<UINT>(SrvOffsets::Count);
+    static constexpr UINT COMPUTE_UAV_SIZE = static_cast<UINT>(ComputeUavOffsets::Count);
+    static constexpr UINT COMPUTE_CBV_SRV_UAV_SIZE = COMPUTE_CBV_SIZE + COMPUTE_SRV_SIZE + COMPUTE_UAV_SIZE; //* FrameCount; // 2srv + 1uav
 
     // Pipeline objects
     CD3DX12_VIEWPORT myViewport;

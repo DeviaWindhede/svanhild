@@ -103,6 +103,7 @@ bool Texture::Bind(UINT aSlot, DX12* aDx12)
 	UINT descriptorSize = aDx12->myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 	destHandle.ptr = aDx12->mySrvHeap.cpuStart.ptr + aSlot * descriptorSize;
 
+	// TODO: Fix bindless textures so we dont need to use this whack code
 	aDx12->myDevice->CopyDescriptorsSimple(1, destHandle, srcHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
 	return true;

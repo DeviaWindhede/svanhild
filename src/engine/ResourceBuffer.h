@@ -32,6 +32,7 @@ public:
     
     D3D12_RESOURCE_STATES defaultResourceState;
     bool dirty = false;
+    bool wasDirty = false;
 protected:
     virtual void Create(ComPtr<ID3D12Device>& aDevice, size_t aSize, D3D12_RESOURCE_DESC aDesc);
     
@@ -113,6 +114,7 @@ void ResourceBuffer<T>::Create(ComPtr<ID3D12Device>& aDevice, size_t aSize, D3D1
 template <typename T>
 void ResourceBuffer<T>::Update(ComPtr<ID3D12GraphicsCommandList>& aCommandList)
 {
+    wasDirty = false;
     if (!dirty)
         return;
     
@@ -154,6 +156,7 @@ void ResourceBuffer<T>::Update(ComPtr<ID3D12GraphicsCommandList>& aCommandList)
 
     gpuSize = size;
     dirty = false;
+    wasDirty = true;
 }
 
 template <typename T>

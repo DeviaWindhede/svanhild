@@ -256,12 +256,12 @@ void DX12::LoadPipeline()
             myRtvDescriptorSize = myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
             mySrvHeap.Init(myDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_BOUND_SRV_COUNT, true);
-            mySrvHeap.descriptorHeap->SetName(L"SRV_Heap");
+            mySrvHeap.descriptorHeap->SetName(L"CBV_SRV_UAV_HEAP");
             mySrvStagingHeap.Init(myDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_SRV_COUNT, false);
-            mySrvHeap.descriptorHeap->SetName(L"SRV_Heap_Staging");
+            mySrvHeap.descriptorHeap->SetName(L"CBV_SRV_UAV_HEAP_STAGING");
 
-            myComputeCbvSrvUavHeap.Init(myDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, CBV_SRV_UAV_SIZE, true);
-            myComputeCbvSrvUavHeap.descriptorHeap->SetName(L"CBV_SRV_UAV_HEAP");
+            myComputeCbvSrvUavHeap.Init(myDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, COMPUTE_CBV_SRV_UAV_SIZE, true);
+            myComputeCbvSrvUavHeap.descriptorHeap->SetName(L"COMPUTE_CBV_SRV_UAV_HEAP");
         }
 
         frameBuffer.Init(myDevice.Get());
@@ -305,14 +305,12 @@ void DX12::LoadPipeline()
         }
 
         CD3DX12_DESCRIPTOR_RANGE1 ranges[1]{};
-        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_BOUND_SRV_COUNT, 0, 0,
-                       D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_BOUND_SRV_COUNT, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
         //ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_BOUND_SRV_COUNT, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
         //ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 
         CD3DX12_ROOT_PARAMETER1 rootParameters[2]{{}, {}};
-        rootParameters[0].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC,
-                                                   D3D12_SHADER_VISIBILITY_VERTEX);
+        rootParameters[0].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_VERTEX);
         rootParameters[1].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
 
         D3D12_STATIC_SAMPLER_DESC sampler = {};
@@ -346,8 +344,8 @@ void DX12::LoadPipeline()
     // Compute shader root signature
     {
         CD3DX12_DESCRIPTOR_RANGE1 ranges[2];
-        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
-        ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, COMPUTE_SRV_SIZE, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+        ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, COMPUTE_UAV_SIZE, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
 
         CD3DX12_ROOT_PARAMETER1 rootParameters[2];
         rootParameters[0].InitAsDescriptorTable(_countof(ranges), ranges);
@@ -639,7 +637,6 @@ void DX12::PrepareRender()
         myCommandList->RSSetViewports(1, &myViewport);
         myCommandList->RSSetScissorRects(1, &myScissorRect);
 
-        meshRenderer.PrepareRender(this);
         // Indicate that the back buffer will be used as a render target.
         {
             CD3DX12_RESOURCE_BARRIER barriers[1]
