@@ -1,16 +1,9 @@
 ﻿#pragma once
 #include "DXHelper.h"
-#include "ResourceBuffer.h"
+#include "OutputCommandBuffer.h"
+#include "RenderConstants.h"
 // #include "ResourceBuffer.h"
 // #include "ResourceBuffer.h"
-
-struct DrawIndirectArgs {
-    UINT IndexCountPerInstance;
-    UINT InstanceCount;
-    UINT StartIndexLocation;
-    UINT BaseVertexLocation;
-    UINT StartInstanceLocation;
-};
 
 struct RootConstants
 {
@@ -39,28 +32,28 @@ class Mesh;
  *	6. Lägg till en defragmentation funktion
  */
 
-class MeshRenderer final : public ResourceBuffer<DrawIndirectArgs>
+class MeshRenderer final
 {
 public:
     friend class DX12;
 
     explicit MeshRenderer();
-    void Create(class DX12* aDx12, size_t aSize);
-    size_t AddItem(ComPtr<ID3D12Device>& aDevice, DrawIndirectArgs* aData, size_t aSize) override;
-    void Update(ComPtr<ID3D12GraphicsCommandList>& aComputeCommandList) override;
+
+    void Create(DX12* aDx12);
+    void Update(ComPtr<ID3D12GraphicsCommandList>& aComputeCommandList);
+    size_t AddItem(ComPtr<ID3D12Device>& aDevice, DrawIndirectArgs* aData, size_t aSize);
     
-    void Dispatch(DX12* aDx12);
-    void ExecuteIndirectRender(DX12* aDx12);
-    void OnEndFrame(DX12* aDx12);
+    void Dispatch();
+    void ExecuteIndirectRender();
+    void OnEndFrame();
 private:
-    void UpdateRootConstants(DX12* aDx12);
-    void Create(ComPtr<ID3D12Device>& aDevice, size_t aSize) override;
-    void CreateResourceViews();
+    static constexpr UINT MIN_BUFFER_CONTENT_SIZE = 1;
+    
+    void UpdateRootConstants();
     static UINT GetFrameGroupCount(size_t aSize);
     
-    CD3DX12_CPU_DESCRIPTOR_HANDLE uavArgsHandle;
-    
     RootConstants rootConstants;
+    OutputCommandBuffer buffers[RenderConstants::FrameCount];
     
     DX12* dx12 = nullptr;
 };

@@ -283,7 +283,7 @@ HRESULT ShaderCompiler::CompileShader_Internal(std::wstring aPath, ShaderType aT
 
 	outShader.path = aPath;
 
-	target += "s_5_0";
+	target += "s_5_1";
 	aPath += L".hlsl";
 
 #if defined(_DEBUG)
@@ -307,6 +307,7 @@ HRESULT ShaderCompiler::CompileShader_Internal(std::wstring aPath, ShaderType aT
 	if (FAILED(hr) && errorBlob)
 	{
 		OutputDebugStringA((char*)errorBlob->GetBufferPointer());
+		printf((char*)errorBlob->GetBufferPointer());
 		errorBlob->Release();
 
 		//throw HrException(hr);

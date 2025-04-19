@@ -17,6 +17,7 @@ void FrameBuffer::Update(class DX12& aDx12, Camera& aCamera, ApplicationTimer& a
 	data[0].data.farPlane = aCamera.farPlane;
 	data[0].data.viewport = DirectX::XMFLOAT2(static_cast<float>(aDx12.myViewport.Width), static_cast<float>(aDx12.myViewport.Height));
 	data[0].data.time = aTimer.GetTotalTime();
+	data[0].data.frameIndex = aDx12.myFrameIndex;
 
 	memcpy(cbvDataBegin, &data, sizeof(data));
 }

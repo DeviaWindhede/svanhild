@@ -36,6 +36,10 @@ public:
 	size_t indexGS	= SIZE_T_MAX;
 	size_t indexHS	= SIZE_T_MAX;
 	size_t indexDS	= SIZE_T_MAX;
+
+	D3D12_GRAPHICS_PIPELINE_STATE_DESC graphicsDesc;
+	D3D12_COMPUTE_PIPELINE_STATE_DESC computeDesc;
+	
 	ComPtr<ID3D12PipelineState> state;
 };
 
@@ -46,6 +50,8 @@ public:
 #include <thread>
 #include <mutex>
 #endif
+
+// TODO: UPDATE TO USE DXC AND SWAP TO SHADER MODEL 6.0
 
 class ShaderCompiler
 {
@@ -200,7 +206,10 @@ inline HRESULT ShaderCompiler::CreatePSO_Internal(PipelineState& outPSO, ShaderI
 		HRESULT result = instance->dx12.myDevice->CreateComputePipelineState(&computePsoDesc, IID_PPV_ARGS(&outPSO.state));
 
 		if (SUCCEEDED(result))
+		{
 			NAME_D3D12_OBJECT(outPSO.state);
+			outPSO.computeDesc = computePsoDesc;
+		}
 
 		return result;
 	}
@@ -220,7 +229,7 @@ inline HRESULT ShaderCompiler::CreatePSO_Internal(PipelineState& outPSO, ShaderI
 		{ "MODEL",  0, DXGI_FORMAT_R32_UINT,			1, D3D12_APPEND_ALIGNED_ELEMENT, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 }
 	};
 
-	psoDesc.InputLayout = { inputElementDescs, _countof(inputElementDescs) };
+	psoDesc.InputLayout = { .pInputElementDescs= inputElementDescs, .NumElements= _countof(inputElementDescs) };
 	psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
 	psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
 	psoDesc.DepthStencilState.DepthEnable = TRUE;
@@ -237,7 +246,10 @@ inline HRESULT ShaderCompiler::CreatePSO_Internal(PipelineState& outPSO, ShaderI
 	HRESULT result = instance->dx12.myDevice->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&outPSO.state));
 	
 	if (SUCCEEDED(result))
+	{
 		NAME_D3D12_OBJECT(outPSO.state);
+		outPSO.graphicsDesc = psoDesc;
+	}
 
 	return result;
 }

@@ -1,3 +1,4 @@
+#define FRAME_COUNT 2
 
 struct FrameBufferData
 {
@@ -8,6 +9,7 @@ struct FrameBufferData
     float g_farPlane;
     float g_time;
     uint g_renderPass;
+    uint g_frameIndex;
 };
 
 struct InstanceData

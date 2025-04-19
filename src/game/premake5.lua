@@ -56,7 +56,7 @@ project "Game"
 			"_LIB"
 		}
 
-	shadermodel("5.0")
+	shadermodel("5.1")
 	os.mkdir(dirs.shaders)
 	filter("files:**.hlsl")
 		flags("ExcludeFromBuild")

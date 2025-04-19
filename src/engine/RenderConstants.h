@@ -1,4 +1,7 @@
 #pragma once
 
-static constexpr unsigned int FrameCount = 2;
+namespace RenderConstants
+{
+    static constexpr unsigned int FrameCount = 2;
+}
 

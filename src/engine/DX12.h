@@ -42,7 +42,6 @@ public:
         _Outptr_result_maybenull_ IDXGIAdapter1** ppAdapter,
         bool requestHighPerformanceAdapter = false);
 
-    static constexpr UINT FrameCount = 2;
     static constexpr UINT MAX_CBV_COUNT = 1;
     static constexpr UINT MAX_SRV_COUNT = 4096;
     static constexpr UINT MAX_UAV_COUNT = 0; // TODO: add UAV support
@@ -56,7 +55,7 @@ public:
 
     static constexpr UINT COMPUTE_CBV_SIZE = 0; // TODO: Change to 2 here
     static constexpr UINT COMPUTE_SRV_SIZE = static_cast<UINT>(SrvOffsets::Count);
-    static constexpr UINT COMPUTE_UAV_SIZE = static_cast<UINT>(ComputeUavOffsets::Count);
+    static constexpr UINT COMPUTE_UAV_SIZE = RenderConstants::FrameCount * static_cast<UINT>(ComputeUavOffsets::Count);
     static constexpr UINT COMPUTE_CBV_SRV_UAV_SIZE = COMPUTE_CBV_SIZE + COMPUTE_SRV_SIZE + COMPUTE_UAV_SIZE; //* FrameCount; // 2srv + 1uav
 
     // Pipeline objects
@@ -64,10 +63,10 @@ public:
     CD3DX12_RECT myScissorRect;
     ComPtr<IDXGISwapChain3> mySwapChain;
     ComPtr<ID3D12Device> myDevice;
-    ComPtr<ID3D12Resource> myRenderTargets[FrameCount];
+    ComPtr<ID3D12Resource> myRenderTargets[RenderConstants::FrameCount];
     ComPtr<ID3D12Resource> myDepthBuffer;
-    ComPtr<ID3D12CommandAllocator> myCommandAllocator[FrameCount];
-    ComPtr<ID3D12CommandAllocator> myComputeCommandAllocator[FrameCount];
+    ComPtr<ID3D12CommandAllocator> myCommandAllocator[RenderConstants::FrameCount];
+    ComPtr<ID3D12CommandAllocator> myComputeCommandAllocator[RenderConstants::FrameCount];
     ComPtr<ID3D12CommandAllocator> myBundleAllocator;
     ComPtr<ID3D12CommandQueue> myCommandQueue;
     ComPtr<ID3D12CommandQueue> myComputeCommandQueue;
@@ -91,7 +90,7 @@ public:
     size_t currentPSO = SIZE_T_MAX;
     size_t currentComputePSO = SIZE_T_MAX;
 
-    ComPtr<ID3D12Resource> myProcessedCommandBuffers[FrameCount];
+    ComPtr<ID3D12Resource> myProcessedCommandBuffers[RenderConstants::FrameCount];
     ComPtr<ID3D12Resource> myProcessedCommandBufferCounterReset;
 
     MeshRenderer meshRenderer;
@@ -101,7 +100,7 @@ public:
     HANDLE myFenceEvent;
     ComPtr<ID3D12Fence> myFence;
     ComPtr<ID3D12Fence> myComputeFence;
-    UINT64 myFenceValues[FrameCount];
+    UINT64 myFenceValues[RenderConstants::FrameCount];
     bool swapChainOccluded = false;
     bool useVSync = false;
 private:

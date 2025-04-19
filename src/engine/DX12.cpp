@@ -112,7 +112,7 @@ void DX12::Cleanup()
     }
     ShaderCompiler::DestroyInstance();
 
-    for (UINT i = 0; i < FrameCount; i++)
+    for (UINT i = 0; i < RenderConstants::FrameCount; i++)
     {
         if (myRenderTargets[i])
         {
@@ -126,7 +126,7 @@ void DX12::Cleanup()
         mySwapChain->SetFullscreenState(false, nullptr);
         mySwapChain = nullptr;
     }
-    for (UINT i = 0; i < FrameCount; i++)
+    for (UINT i = 0; i < RenderConstants::FrameCount; i++)
         if (myCommandAllocator[i]) { myCommandAllocator[i] = nullptr; }
     if (myCommandQueue) { myCommandQueue = nullptr; }
     if (myCommandList) { myCommandList = nullptr; }
@@ -211,7 +211,7 @@ void DX12::LoadPipeline()
 
     // Describe and create the swap chain.
     DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
-    swapChainDesc.BufferCount = FrameCount;
+    swapChainDesc.BufferCount = RenderConstants::FrameCount;
     swapChainDesc.Width = 0;
     swapChainDesc.Height = 0;
     swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
@@ -249,7 +249,7 @@ void DX12::LoadPipeline()
         {
             // Describe and create a render target view (RTV) descriptor heap.
             D3D12_DESCRIPTOR_HEAP_DESC rtvHeapDesc = {};
-            rtvHeapDesc.NumDescriptors = FrameCount;
+            rtvHeapDesc.NumDescriptors = RenderConstants::FrameCount;
             rtvHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
             rtvHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
             ThrowIfFailed(myDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&myRtvHeap)));
@@ -274,7 +274,7 @@ void DX12::LoadPipeline()
             CD3DX12_CPU_DESCRIPTOR_HANDLE rtvHandle(myRtvHeap->GetCPUDescriptorHandleForHeapStart());
 
             // Create a RTV for each frame.
-            for (UINT n = 0; n < FrameCount; n++)
+            for (UINT n = 0; n < RenderConstants::FrameCount; n++)
             {
                 ThrowIfFailed(mySwapChain->GetBuffer(n, IID_PPV_ARGS(&myRenderTargets[n])));
                 myDevice->CreateRenderTargetView(myRenderTargets[n].Get(), nullptr, rtvHandle);
@@ -344,8 +344,8 @@ void DX12::LoadPipeline()
     // Compute shader root signature
     {
         CD3DX12_DESCRIPTOR_RANGE1 ranges[2];
-        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, COMPUTE_SRV_SIZE, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
-        ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, COMPUTE_UAV_SIZE, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, COMPUTE_SRV_SIZE, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE); // instance buffer and instance count buffer
+        ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, COMPUTE_UAV_SIZE, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE); // output commands buffer array
 
         CD3DX12_ROOT_PARAMETER1 rootParameters[2];
         rootParameters[0].InitAsDescriptorTable(_countof(ranges), ranges);
@@ -595,7 +595,7 @@ void DX12::LoadPipeline()
     }
 
     // instanceBuffer.Create(this);
-    meshRenderer.Create(this, 0);
+    meshRenderer.Create(this);
 
     // Close the command list and execute it to begin the initial GPU setup.
     ThrowIfFailed(myCommandList->Close());
@@ -618,8 +618,7 @@ void DX12::PrepareRender()
     {
         myComputeCommandList->SetComputeRootSignature(myComputeRootSignature.Get());
         ShaderCompiler::GetPSO(currentComputePSO).Set(*this);
-
-        meshRenderer.Dispatch(this);
+        meshRenderer.Dispatch();
     }
     ThrowIfFailed(myComputeCommandList->Close());
 
@@ -672,7 +671,7 @@ void DX12::PrepareRender()
 
 void DX12::ExecuteRender()
 {
-    meshRenderer.ExecuteIndirectRender(this);
+    meshRenderer.ExecuteIndirectRender();
     
     CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
         myRenderTargets[myFrameIndex].Get(),
@@ -704,7 +703,7 @@ void DX12::EndRender()
     ThrowIfFailed(hr);
     swapChainOccluded = hr == DXGI_STATUS_OCCLUDED;
 
-    meshRenderer.OnEndFrame(this);
+    meshRenderer.OnEndFrame();
     // instanceBuffer.OnEndFrame(this);
     MoveToNextFrame();
 }
