@@ -30,7 +30,11 @@
 *.exe
 *.out
 *.app
+
+# Visual Studio
 *.vcxproj
+*.vcxproj.user
+*.vcxproj.filters
 
 .vs
 bin
