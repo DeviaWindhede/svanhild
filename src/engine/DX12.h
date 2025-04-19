@@ -9,6 +9,20 @@
 
 using Microsoft::WRL::ComPtr;
 
+enum class SrvOffsets
+{
+    InstanceBuffer,
+    InstanceCount,
+    CommandInput,
+    Count
+};
+
+enum class UavOffsets
+{
+    CommandOutput,
+    Count
+};
+
 class DX12
 {
 public:
@@ -37,8 +51,8 @@ public:
     static constexpr UINT INSTANCE_BUFFER_SIZE = 4096;
 
     static constexpr UINT CBV_SIZE = 0; // TODO: Change to 2 here
-    static constexpr UINT SRV_SIZE = 2;
-    static constexpr UINT UAV_SIZE = 1;
+    static constexpr UINT SRV_SIZE = static_cast<UINT>(SrvOffsets::Count);
+    static constexpr UINT UAV_SIZE = static_cast<UINT>(UavOffsets::Count);
     static constexpr UINT CBV_SRV_UAV_SIZE = CBV_SIZE + SRV_SIZE + UAV_SIZE; //* FrameCount; // 2srv + 1uav
 
     // Pipeline objects

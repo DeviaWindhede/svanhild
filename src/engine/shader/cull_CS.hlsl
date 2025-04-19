@@ -1,14 +1,5 @@
 #include "types.hlsli"
 
-struct DrawIndirectArgs
-{
-    uint IndexCountPerInstance;
-    uint InstanceCount;
-    uint StartIndexLocation;
-    uint BaseVertexLocation;
-    uint StartInstanceLocation;
-};
-
 cbuffer RootConstants : register(b0)
 {
     uint NumInstances;
@@ -16,7 +7,8 @@ cbuffer RootConstants : register(b0)
 };
 
 StructuredBuffer<InstanceData> instances : register(t0); // instance data
-StructuredBuffer<DrawIndirectArgs> inputCommands : register(t1); // render commands, i.e mesh info
+StructuredBuffer<InstanceCountData> instanceCount : register(t1);
+StructuredBuffer<DrawIndirectArgs> inputCommands : register(t2); // render commands, i.e mesh info
 
 RWStructuredBuffer<DrawIndirectArgs> outputCommands : register(u0); // output draw commands
 // AppendStructuredBuffer<DrawIndirectArgs> outputCommands : register(u0); // output draw commands
@@ -29,6 +21,12 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3
 {
     uint instanceIndex = DTid.x;
     uint commandIndex = 0;
+
+    // if (instanceIndex != 0)
+    //     return;
+
+    // if (instanceCount[1].offset != 180)
+    //     return;
     
     if (instanceIndex >= NumInstances)
         return;

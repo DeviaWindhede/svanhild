@@ -36,7 +36,6 @@ void GameWindow::OnInit()
 	//	ThrowIfFailed(dx12.myBundle->Close());
 	//}
 
-	instances.clear();
 	meshes.clear();
 
 	meshes.push_back({});
@@ -55,8 +54,10 @@ void GameWindow::OnInit()
 	size_t amount = 180;
 	for (int i = 0; i < meshes.size(); i++)
 	{
-		instanceOffsets.push_back(instances.size());
-		meshes[i].instanceOffset = instances.size();
+		instanceOffsets.push_back(totalInstances.size());
+		meshes[i].instanceOffset = totalInstances.size();
+		
+		std::vector<InstanceData> instances;
 		for (int j = 0; j < amount; j++)
 		{
 			auto S = DirectX::XMMatrixScaling(1.0f, 1.0f, 1.0f);
@@ -64,6 +65,7 @@ void GameWindow::OnInit()
 			auto T = DirectX::XMMatrixTranslation(offset, offset + i * 10.0f, offset * j + 10.0f);
 
 			instances.push_back({ S * R * T , meshes[1].mesh->Index() });
+			totalInstances.push_back(instances.back());
 			meshes[i].instanceCount++;
 			if (i > 0)
 			{
@@ -71,6 +73,7 @@ void GameWindow::OnInit()
 				meshes[i].mesh->indeciesIndex = meshes[i - 1].mesh->indeciesIndex + meshes[i - 1].mesh->IndexCount();
 			}
 		}
+		dx12.instanceBuffer.AddItem(dx12.myDevice, instances.data(), instances.size());
 	}
 
 	for (size_t i = 0; i < instanceOffsets.size(); i++)
@@ -272,7 +275,8 @@ void GameWindow::OnRender()
 	if (meshes.size() == 0)
 		return;
 
-	dx12.instanceBuffer.Update(dx12, instances);
+	// dx12.instanceBuffer.Update(dx12, totalInstances);
+	dx12.instanceBuffer.Update(dx12.myCommandList);
 	dx12.meshRenderer.Update(dx12.myCommandList);
 	resourceLoader.OnRender();
 }

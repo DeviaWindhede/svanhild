@@ -15,3 +15,18 @@ struct InstanceData
     float4x3 instanceTransform : WORLD;
     uint modelIndex;
 };
+
+struct DrawIndirectArgs
+{
+    uint IndexCountPerInstance;
+    uint InstanceCount;
+    uint StartIndexLocation;
+    uint BaseVertexLocation;
+    uint StartInstanceLocation;
+};
+
+struct InstanceCountData
+{
+    uint instanceCount;
+    uint offset;
+};

@@ -5,6 +5,13 @@
 #include "ShaderCompiler.h"
 #include "mesh/Vertex.h"
 
+/*
+ * TODO
+ * fyll output commands med input (gör swappen)
+ * kör reset compute
+ */
+
+
 MeshRenderer::MeshRenderer() : ResourceBuffer(D3D12_RESOURCE_STATES::D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER)
 {
 }
@@ -13,6 +20,11 @@ void MeshRenderer::Create(class DX12* aDx12, size_t aSize)
 {
 	dx12 = aDx12;
 	Create(aDx12->myDevice, aSize);
+}
+
+size_t MeshRenderer::AddItem(ComPtr<ID3D12Device>& aDevice, DrawIndirectArgs* aData, size_t aSize)
+{
+	return ResourceBuffer<DrawIndirectArgs>::AddItem(aDevice, aData, aSize);
 }
 
 void MeshRenderer::Update(ComPtr<ID3D12GraphicsCommandList>& aCommandList)
@@ -29,7 +41,7 @@ void MeshRenderer::Update(ComPtr<ID3D12GraphicsCommandList>& aCommandList)
 void MeshRenderer::UpdateRootConstants(DX12* aDx12)
 {
 	rootConstants.NumCommands = gpuSize;
-	rootConstants.NumInstances = aDx12->instanceBuffer.GetCpuSize();
+	rootConstants.NumInstances = aDx12->instanceBuffer.size;
 	
 	aDx12->myComputeCommandList->SetComputeRoot32BitConstants(static_cast<UINT>(ComputeRootParameters::RootConstants), sizeof(RootConstants), reinterpret_cast<void*>(&rootConstants), 0);
 }
@@ -41,10 +53,10 @@ void MeshRenderer::Dispatch(DX12* aDx12)
 
 	UpdateRootConstants(aDx12);
 	
-	D3D12_GPU_DESCRIPTOR_HANDLE uavGPUHandle = aDx12->myComputeCbvSrvUavHeap.gpuStart;
-	uavGPUHandle.ptr += aDx12->cbvSrvUavDescriptorSize;
-	D3D12_GPU_DESCRIPTOR_HANDLE uavArgsGPUHandle = uavGPUHandle;
-	uavArgsGPUHandle.ptr += aDx12->cbvSrvUavDescriptorSize;
+	// D3D12_GPU_DESCRIPTOR_HANDLE uavGPUHandle = aDx12->myComputeCbvSrvUavHeap.gpuStart;
+	// uavGPUHandle.ptr += 1 * aDx12->cbvSrvUavDescriptorSize; // TODO: Move multiplier to enum in dx12 or something
+	// D3D12_GPU_DESCRIPTOR_HANDLE uavArgsGPUHandle = uavGPUHandle;
+	// uavArgsGPUHandle.ptr += aDx12->cbvSrvUavDescriptorSize;
 
 	ID3D12DescriptorHeap* descriptorHeaps[] = { aDx12->myComputeCbvSrvUavHeap.descriptorHeap };
 	aDx12->myComputeCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
@@ -63,19 +75,19 @@ void MeshRenderer::Dispatch(DX12* aDx12)
 		);
 		aDx12->myComputeCommandList->ResourceBarrier(1, &barrier);
 
-		UINT frameCount = GetFrameGroupCount(aDx12->instanceBuffer.GetCpuSize());
+		UINT frameCount = GetFrameGroupCount(aDx12->instanceBuffer.size);
 		aDx12->myComputeCommandList->Dispatch(frameCount, 1, 1);
 	}
 	
-	{
-		D3D12_GPU_DESCRIPTOR_HANDLE uavGPUHandle = aDx12->myComputeCbvSrvUavHeap.gpuStart;
-		uavGPUHandle.ptr += aDx12->myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-		
-		//aDx12->myCommandList->SetGraphicsRootDescriptorTable(0, aDx12->myCbvSrvUavHeap.gpuStart);
-		//aDx12->myCommandList->SetGraphicsRootDescriptorTable(1, uavGPUHandle);
-
-		// Issue indirect draw call
-	}
+	// {
+	// 	D3D12_GPU_DESCRIPTOR_HANDLE uavGPUHandle = aDx12->myComputeCbvSrvUavHeap.gpuStart;
+	// 	uavGPUHandle.ptr += aDx12->myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
+	// 	
+	// 	//aDx12->myCommandList->SetGraphicsRootDescriptorTable(0, aDx12->myCbvSrvUavHeap.gpuStart);
+	// 	//aDx12->myCommandList->SetGraphicsRootDescriptorTable(1, uavGPUHandle);
+	//
+	// 	// Issue indirect draw call
+	// }
 }
 
 void MeshRenderer::PrepareRender(DX12* aDx12)
@@ -134,7 +146,17 @@ void MeshRenderer::OnEndFrame(DX12* aDx12)
 
 void MeshRenderer::Create(ComPtr<ID3D12Device>& aDevice, size_t aSize)
 {
-	ResourceBuffer<DrawIndirectArgs>::Create(aDevice, aSize);
+	D3D12_RESOURCE_DESC argsDesc = {};
+	argsDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+	argsDesc.Width = sizeof(DrawIndirectArgs) * aSize;
+	argsDesc.Height = 1;
+	argsDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	argsDesc.MipLevels = 1;
+	argsDesc.DepthOrArraySize = 1;
+	argsDesc.SampleDesc.Count = 1;
+	argsDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+	
+	ResourceBuffer<DrawIndirectArgs>::Create(aDevice, aSize, argsDesc);
 
 	if (aSize == 0)
 		return;
@@ -144,16 +166,6 @@ void MeshRenderer::Create(ComPtr<ID3D12Device>& aDevice, size_t aSize)
 	
 	// draw argument buffer
 	{
-		D3D12_RESOURCE_DESC argsDesc = {};
-		argsDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-		argsDesc.Width = sizeof(DrawIndirectArgs) * aSize;
-		// argsDesc.Width = sizeof(DrawIndirectArgs) * heapSize;
-		argsDesc.Height = 1;
-		argsDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-		argsDesc.MipLevels = 1;
-		argsDesc.DepthOrArraySize = 1;
-		argsDesc.SampleDesc.Count = 1;
-		argsDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 
 		heapProps = { D3D12_HEAP_TYPE_DEFAULT };
 		aDevice->CreateCommittedResource(
@@ -181,35 +193,40 @@ void MeshRenderer::CreateResourceViews()
 {
 	if (gpuSize == 0)
 		return;
-	
-	// CD3DX12_CPU_DESCRIPTOR_HANDLE handle(aDx12->myComputeCbvSrvUavHeap.cpuStart, 1, aDx12->cbvSrvUavDescriptorSize);
-	CD3DX12_CPU_DESCRIPTOR_HANDLE handle(dx12->myComputeCbvSrvUavHeap.cpuStart);
-	handle.ptr += dx12->cbvSrvUavDescriptorSize;
 
-	// Create SRVs for the command buffers.
-	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
-	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-	srvDesc.Buffer.NumElements = gpuSize;
-	srvDesc.Buffer.StructureByteStride = sizeof(DrawIndirectArgs);
-	srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+	{
+		CD3DX12_CPU_DESCRIPTOR_HANDLE handle(dx12->myComputeCbvSrvUavHeap.cpuStart);
+		handle.Offset(static_cast<UINT>(SrvOffsets::CommandInput), dx12->cbvSrvUavDescriptorSize);
 
-	dx12->myDevice->CreateShaderResourceView(resource.Get(), &srvDesc, handle);
-	uavHandle = handle;
+		// Create SRVs for the command buffers.
+		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+		srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+		srvDesc.Buffer.NumElements = gpuSize;
+		srvDesc.Buffer.StructureByteStride = sizeof(DrawIndirectArgs);
+		srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
 
-	handle.ptr += dx12->cbvSrvUavDescriptorSize;
+		dx12->myDevice->CreateShaderResourceView(resource.Get(), &srvDesc, handle);
+	}
 
-	D3D12_UNORDERED_ACCESS_VIEW_DESC uavArgsDesc = {};
-	uavArgsDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-	uavArgsDesc.Buffer.FirstElement = 0;
-	uavArgsDesc.Buffer.NumElements = gpuSize;
-	uavArgsDesc.Buffer.StructureByteStride = sizeof(DrawIndirectArgs);
-	uavArgsDesc.Buffer.CounterOffsetInBytes = 0;
-	uavArgsDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+	{
+		CD3DX12_CPU_DESCRIPTOR_HANDLE handle(dx12->myComputeCbvSrvUavHeap.cpuStart);
+		handle.Offset(static_cast<UINT>(SrvOffsets::Count), dx12->cbvSrvUavDescriptorSize); // UAVs after SRVs
+		uavHandle = handle;
 
-	dx12->myDevice->CreateUnorderedAccessView(indirectArgsBuffer.Get(), nullptr, &uavArgsDesc, handle);
-	uavArgsHandle = handle;
+		D3D12_UNORDERED_ACCESS_VIEW_DESC uavArgsDesc = {};
+		uavArgsDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+		uavArgsDesc.Buffer.FirstElement = 0;
+		uavArgsDesc.Buffer.NumElements = gpuSize;
+		uavArgsDesc.Buffer.StructureByteStride = sizeof(DrawIndirectArgs);
+		uavArgsDesc.Buffer.CounterOffsetInBytes = 0;
+		uavArgsDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+		
+		dx12->myDevice->CreateUnorderedAccessView(indirectArgsBuffer.Get(), nullptr, &uavArgsDesc, handle);
+		uavArgsHandle = handle;
+	}
+
 
 	//for (UINT frame = 0; frame < aDx12->FrameCount; frame++)
 	//{

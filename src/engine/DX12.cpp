@@ -22,7 +22,8 @@ DX12::DX12(UINT aWidth, UINT aHeight, bool aUseWarpDevice) :
     myFenceValues{},
     myRtvDescriptorSize(0),
     myFenceEvent{},
-    useWarpDevice(aUseWarpDevice)
+    useWarpDevice(aUseWarpDevice),
+    instanceBuffer(this)
 {
     ShaderCompiler::CreateInstance(*this);
 }
@@ -345,7 +346,7 @@ void DX12::LoadPipeline()
     // Compute shader root signature
     {
         CD3DX12_DESCRIPTOR_RANGE1 ranges[2];
-        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 2, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, 3, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
         ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
 
         CD3DX12_ROOT_PARAMETER1 rootParameters[2];
@@ -595,7 +596,7 @@ void DX12::LoadPipeline()
         //myProcessedCommandBufferCounterReset->Unmap(0, nullptr);
     }
 
-    instanceBuffer.Create(this);
+    // instanceBuffer.Create(this);
     meshRenderer.Create(this, 0);
 
     // Close the command list and execute it to begin the initial GPU setup.
@@ -707,7 +708,7 @@ void DX12::EndRender()
     swapChainOccluded = hr == DXGI_STATUS_OCCLUDED;
 
     meshRenderer.OnEndFrame(this);
-    instanceBuffer.OnEndFrame(this);
+    // instanceBuffer.OnEndFrame(this);
     MoveToNextFrame();
 }
 

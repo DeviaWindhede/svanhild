@@ -46,6 +46,7 @@ public:
 
     explicit MeshRenderer();
     void Create(class DX12* aDx12, size_t aSize);
+    size_t AddItem(ComPtr<ID3D12Device>& aDevice, DrawIndirectArgs* aData, size_t aSize) override;
     void Update(ComPtr<ID3D12GraphicsCommandList>& aCommandList) override;
     
     void Dispatch(DX12* aDx12);
