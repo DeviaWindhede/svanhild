@@ -63,14 +63,22 @@ void MeshRenderer::Dispatch()
 	dx12->myComputeCommandList->SetComputeRootDescriptorTable(static_cast<UINT>(ComputeRootParameters::SrvUavTable), dx12->myComputeCbvSrvUavHeap.gpuStart); 
 	
 	{
+		CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+				buffers[dx12->myFrameIndex].resource.Get(),
+				D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
+				buffers[dx12->myFrameIndex].defaultResourceState
+		);
+	    
+		dx12->myComputeCommandList->ResourceBarrier(1, &barrier);
+		
 		// TODO: Reset compute shader should be ran here
-		for (UINT i = 0; i < RenderConstants::FrameCount; i++)
-		{
-			buffers[i].Reset();
-		}
+		buffers[dx12->myFrameIndex].Reset();
 		
 		UINT frameCount = GetFrameGroupCount(dx12->instanceBuffer.size);
 		dx12->myComputeCommandList->Dispatch(frameCount, 1, 1);
+
+		CD3DX12_RESOURCE_BARRIER uavBarrier = CD3DX12_RESOURCE_BARRIER::UAV(buffers[dx12->myFrameIndex].resource.Get());
+		dx12->myComputeCommandList->ResourceBarrier(1, &uavBarrier);
 	}
 }
 
@@ -78,7 +86,7 @@ void MeshRenderer::ExecuteIndirectRender()
 {
 	if (buffers[dx12->myFrameIndex].gpuSize == 0 || !buffers[dx12->myFrameIndex].resource)
 		return;
-
+	
 	{
 		CD3DX12_RESOURCE_BARRIER barriers[1]
 		{
@@ -100,16 +108,6 @@ void MeshRenderer::ExecuteIndirectRender()
 		nullptr,                         // No counters
 		0
 	);
-    
-	{
-		CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-				buffers[dx12->myFrameIndex].resource.Get(),
-				D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
-				buffers[dx12->myFrameIndex].defaultResourceState
-		);
-	    
-		dx12->myCommandList->ResourceBarrier(1, &barrier);
-	}
 }
 
 void MeshRenderer::OnEndFrame()

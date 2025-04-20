@@ -34,6 +34,7 @@ public:
 	void ExecuteRender();
     void EndRender();
 	void WaitForGPU();
+	void WaitForComputeGPU();
     void WaitForNextFrame();
     void MoveToNextFrame();
 
@@ -98,9 +99,11 @@ public:
     UINT cbvSrvUavDescriptorSize = 0;
     UINT myFrameIndex;
     HANDLE myFenceEvent;
+    HANDLE myComputeFenceEvent;
     ComPtr<ID3D12Fence> myFence;
     ComPtr<ID3D12Fence> myComputeFence;
     UINT64 myFenceValues[RenderConstants::FrameCount];
+    UINT64 myComputeFenceValues[RenderConstants::FrameCount];
     bool swapChainOccluded = false;
     bool useVSync = false;
 private:

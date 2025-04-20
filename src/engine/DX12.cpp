@@ -607,20 +607,28 @@ void DX12::LoadPipeline()
 void DX12::PrepareRender()
 {
     ThrowIfFailed(myCommandAllocator[myFrameIndex]->Reset());
-    ThrowIfFailed(myComputeCommandAllocator[myFrameIndex]->Reset());
-
     ThrowIfFailed(myCommandList->Reset(myCommandAllocator[myFrameIndex].Get(),
                                        ShaderCompiler::GetPSO(currentPSO).state.Get()));
-    ThrowIfFailed(myComputeCommandList->Reset(myComputeCommandAllocator[myFrameIndex].Get(),
-                                              ShaderCompiler::GetPSO(currentComputePSO).state.Get()));
 
-    if (currentComputePSO < SIZE_T_MAX)
     {
-        myComputeCommandList->SetComputeRootSignature(myComputeRootSignature.Get());
-        ShaderCompiler::GetPSO(currentComputePSO).Set(*this);
-        meshRenderer.Dispatch();
+        // WaitForComputeGPU();
+        ThrowIfFailed(myComputeCommandAllocator[myFrameIndex]->Reset());
+        ThrowIfFailed(myComputeCommandList->Reset(myComputeCommandAllocator[myFrameIndex].Get(),
+                                                  ShaderCompiler::GetPSO(currentComputePSO).state.Get()));
+
+        if (currentComputePSO < SIZE_T_MAX)
+        {
+            myComputeCommandList->SetComputeRootSignature(myComputeRootSignature.Get());
+            ShaderCompiler::GetPSO(currentComputePSO).Set(*this);
+            meshRenderer.Dispatch();
+        }
+        ThrowIfFailed(myComputeCommandList->Close());
+        
+        ID3D12CommandList* ppCommandLists[] = {myComputeCommandList.Get()};
+        myComputeCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
+    
+        myComputeCommandQueue->Signal(myComputeFence.Get(), myComputeFenceValues[myFrameIndex]);
     }
-    ThrowIfFailed(myComputeCommandList->Close());
 
     {
         myCommandList->SetGraphicsRootSignature(myRootSignature.Get());
@@ -665,7 +673,6 @@ void DX12::PrepareRender()
         //dx12.myCommandList->ExecuteBundle(dx12.myBundle.Get());
 
         myCommandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
     }
 }
 
@@ -682,14 +689,10 @@ void DX12::ExecuteRender()
         
     ThrowIfFailed(myCommandList->Close());
 
+    if (currentComputePSO < SIZE_T_MAX)
     {
-        ID3D12CommandList* ppCommandLists[] = {myComputeCommandList.Get()};
-        myComputeCommandQueue->ExecuteCommandLists(_countof(ppCommandLists), ppCommandLists);
-    
-        myComputeCommandQueue->Signal(myComputeFence.Get(), myFenceValues[myFrameIndex]);
-    
         // Execute the rendering work only when the compute work is complete.
-        myCommandQueue->Wait(myComputeFence.Get(), myFenceValues[myFrameIndex]);
+        myCommandQueue->Wait(myComputeFence.Get(), myComputeFenceValues[myFrameIndex]);
     }
     
     // Execute the command list.
@@ -719,6 +722,16 @@ void DX12::WaitForGPU()
     myFenceValues[myFrameIndex]++;
 }
 
+void DX12::WaitForComputeGPU()
+{
+    ThrowIfFailed(myComputeCommandQueue->Signal(myComputeFence.Get(), myComputeFenceValues[myFrameIndex]));
+
+    ThrowIfFailed(myComputeFence->SetEventOnCompletion(myComputeFenceValues[myFrameIndex], myComputeFenceEvent));
+    WaitForSingleObjectEx(myComputeFenceEvent, INFINITE, FALSE);
+
+    myComputeFenceValues[myFrameIndex]++;
+}
+
 void DX12::WaitForNextFrame()
 {
     UINT nextFrameIndex = myFrameIndex + 1;
@@ -742,7 +755,7 @@ void DX12::WaitForNextFrame()
 void DX12::MoveToNextFrame()
 {
     // Schedule a Signal command in the queue.
-    const UINT64 currentFenceValue = myFenceValues[myFrameIndex];
+    UINT64 currentFenceValue = myFenceValues[myFrameIndex];
     ThrowIfFailed(myCommandQueue->Signal(myFence.Get(), currentFenceValue));
 
     // Update the frame index.
@@ -757,4 +770,21 @@ void DX12::MoveToNextFrame()
 
     // Set the fence value for the next frame.
     myFenceValues[myFrameIndex] = currentFenceValue + 1;
+
+    
+    if (currentComputePSO < SIZE_T_MAX)
+    {
+        currentFenceValue = myComputeFenceValues[myFrameIndex];
+        ThrowIfFailed(myComputeCommandQueue->Signal(myFence.Get(), currentFenceValue));
+
+        // If the next frame is not ready to be rendered yet, wait until it is ready.
+        if (myComputeFence->GetCompletedValue() < myComputeFenceValues[myFrameIndex])
+        {
+            ThrowIfFailed(myComputeFence->SetEventOnCompletion(myComputeFenceValues[myFrameIndex], myComputeFenceEvent));
+            WaitForSingleObjectEx(myComputeFenceEvent, INFINITE, FALSE);
+        }
+
+        // Set the fence value for the next frame.
+        myComputeFenceValues[myFrameIndex] = currentFenceValue + 1;
+    }
 }
