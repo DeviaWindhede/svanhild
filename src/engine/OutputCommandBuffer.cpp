@@ -17,6 +17,9 @@ void OutputCommandBuffer::Create(class DX12* aDx12, size_t aSize, UINT aIndexOff
 
 size_t OutputCommandBuffer::AddItem(ComPtr<ID3D12Device>& aDevice, DrawIndirectArgs* aData, size_t aSize)
 {
+	for (size_t i = 0; i < aSize; i++)
+		aData[i].InstanceCount = 0;
+	
     return ResourceBuffer<DrawIndirectArgs>::AddItem(aDevice, aData, aSize);
 }
 
