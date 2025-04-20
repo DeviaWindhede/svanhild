@@ -9,7 +9,6 @@ struct RootConstants
 {
     UINT NumInstances;
     UINT NumCommands;
-    UINT FrameIndex;
 };
 static_assert((sizeof(RootConstants) % sizeof(UINT)) == 0, "Root Signature size must be 32bit value aligned");
 static_assert(sizeof(RootConstants) <= 64, "Root Signature size must be or below 64-bytes");
@@ -17,8 +16,9 @@ static_assert(sizeof(RootConstants) <= 64, "Root Signature size must be or below
 enum class ComputeRootParameters
 {
     SrvUavTable,
+    FrameBuffer,
     RootConstants,
-    ComputeRootParametersCount
+    Count
 };
 
 class Mesh;
@@ -49,6 +49,8 @@ public:
     void Dispatch();
     void ExecuteIndirectRender();
     void OnEndFrame();
+
+    bool IsReady() const;
 private:
     static constexpr UINT MIN_BUFFER_CONTENT_SIZE = 1;
     

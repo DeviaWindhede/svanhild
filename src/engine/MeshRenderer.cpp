@@ -60,9 +60,8 @@ void MeshRenderer::UpdateRootConstants()
 {
 	rootConstants.NumInstances = dx12->instanceBuffer.size;
 	rootConstants.NumCommands = buffers[dx12->myFrameIndex].gpuSize;
-	rootConstants.FrameIndex = dx12->myFrameIndex;
 	
-	dx12->myComputeCommandList->SetComputeRoot32BitConstants(static_cast<UINT>(ComputeRootParameters::RootConstants), sizeof(RootConstants), reinterpret_cast<void*>(&rootConstants), 0);
+	dx12->myComputeCommandList->SetComputeRoot32BitConstants(static_cast<UINT>(ComputeRootParameters::RootConstants), sizeof(RootConstants) / sizeof(float), reinterpret_cast<void*>(&rootConstants), 0);
 }
 
 void MeshRenderer::Dispatch()
@@ -130,4 +129,14 @@ void MeshRenderer::ExecuteIndirectRender()
 void MeshRenderer::OnEndFrame()
 {
 	
+}
+
+bool MeshRenderer::IsReady() const
+{
+	for (UINT i = 0; i < RenderConstants::FrameCount; i++)
+	{
+		if (!buffers[i].uavArgsHandle.ptr)
+			return false;
+	}
+	return true;
 }

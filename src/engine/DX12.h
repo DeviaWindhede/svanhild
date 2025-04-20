@@ -22,6 +22,13 @@ enum class ComputeUavOffsets
     Count
 };
 
+enum class GraphicsRootParameters
+{
+    CbvSrvUav,
+    FrameBuffer,
+    Count
+};
+
 class DX12
 {
 public:

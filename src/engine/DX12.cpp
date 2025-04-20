@@ -363,9 +363,9 @@ void DX12::LoadPipeline()
         //ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_BOUND_SRV_COUNT, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
         //ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
 
-        CD3DX12_ROOT_PARAMETER1 rootParameters[2]{{}, {}};
-        rootParameters[0].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_VERTEX);
-        rootParameters[1].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+        CD3DX12_ROOT_PARAMETER1 rootParameters[static_cast<UINT>(GraphicsRootParameters::Count)]{{}, {}};
+        rootParameters[static_cast<UINT>(GraphicsRootParameters::CbvSrvUav)].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
+        rootParameters[static_cast<UINT>(GraphicsRootParameters::FrameBuffer)].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_VERTEX);
 
         D3D12_STATIC_SAMPLER_DESC sampler = {};
         sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
@@ -401,10 +401,11 @@ void DX12::LoadPipeline()
         ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, COMPUTE_SRV_SIZE, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE); // instance buffer and instance count buffer
         ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, COMPUTE_UAV_SIZE, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE); // output commands buffer array
 
-        CD3DX12_ROOT_PARAMETER1 rootParameters[2];
-        rootParameters[0].InitAsDescriptorTable(_countof(ranges), ranges);
-        rootParameters[1].InitAsConstants(sizeof(FrameBufferData) / sizeof(float), 0);
-
+        CD3DX12_ROOT_PARAMETER1 rootParameters[static_cast<UINT>(ComputeRootParameters::Count)];
+        rootParameters[static_cast<UINT>(ComputeRootParameters::SrvUavTable)].InitAsDescriptorTable(_countof(ranges), ranges);
+        rootParameters[static_cast<UINT>(ComputeRootParameters::FrameBuffer)].InitAsConstantBufferView(0, 0);
+        rootParameters[static_cast<UINT>(ComputeRootParameters::RootConstants)].InitAsConstants(sizeof(RootConstants) / sizeof(float), 0, 1);
+        
         CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
         rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 0, nullptr,
                                    D3D12_ROOT_SIGNATURE_FLAG_NONE);
@@ -673,13 +674,14 @@ void DX12::PrepareRender()
         ThrowIfFailed(myComputeCommandList->Reset(myComputeCommandAllocator[myFrameIndex].Get(),
                                                   ShaderCompiler::GetPSO(currentComputePSO).state.Get()));
 
-        if (currentComputePSO < SIZE_T_MAX)
+        if (currentComputePSO < SIZE_T_MAX && meshRenderer.IsReady())
         {
             myComputeCommandList->SetComputeRootSignature(myComputeRootSignature.Get());
 
             ID3D12DescriptorHeap* descriptorHeaps[] = { myComputeCbvSrvUavHeap.descriptorHeap };
             myComputeCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
             myComputeCommandList->SetComputeRootDescriptorTable(static_cast<UINT>(ComputeRootParameters::SrvUavTable), myComputeCbvSrvUavHeap.gpuStart); 
+            myComputeCommandList->SetComputeRootConstantBufferView(static_cast<UINT>(ComputeRootParameters::FrameBuffer), frameBuffer.resource->GetGPUVirtualAddress());
 
             meshRenderer.Dispatch();
         }
@@ -698,9 +700,8 @@ void DX12::PrepareRender()
         myCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
         D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = mySrvHeap.gpuStart;
-        myCommandList->SetGraphicsRootDescriptorTable(1, gpuHandle);
-
-        myCommandList->SetGraphicsRootConstantBufferView(0, frameBuffer.resource->GetGPUVirtualAddress());
+        myCommandList->SetGraphicsRootDescriptorTable(static_cast<UINT>(GraphicsRootParameters::CbvSrvUav), gpuHandle);
+        myCommandList->SetGraphicsRootConstantBufferView(static_cast<UINT>(GraphicsRootParameters::FrameBuffer), frameBuffer.resource->GetGPUVirtualAddress());
 
         myCommandList->RSSetViewports(1, &myViewport);
         myCommandList->RSSetScissorRects(1, &myScissorRect);

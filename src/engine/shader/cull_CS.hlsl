@@ -1,11 +1,4 @@
-#include "types.hlsli"
-
-cbuffer RootConstants : register(b0)
-{
-    uint NumInstances;
-    uint NumCommands;
-    uint FrameIndex;
-};
+#include "compute_common.hlsli"
 
 StructuredBuffer<InstanceData> instances : register(t0, space0);
 StructuredBuffer<InstanceCountData> instanceCount : register(t1, space0);
@@ -40,5 +33,5 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3
             return;
     }
 
-    InterlockedAdd(outputCommands[FrameIndex][commandIndex].InstanceCount, 1);
+    InterlockedAdd(outputCommands[frameBuffer.g_frameIndex][commandIndex].InstanceCount, 1);
 }
