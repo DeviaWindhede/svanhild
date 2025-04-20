@@ -16,6 +16,19 @@ MeshRenderer::MeshRenderer()
 {
 }
 
+MeshRenderer::~MeshRenderer()
+{
+	Cleanup();
+}
+
+void MeshRenderer::Cleanup()
+{
+	for (UINT i = 0; i < RenderConstants::FrameCount; i++)
+	{
+		buffers[i].Cleanup();
+	}
+}
+
 void MeshRenderer::Create(DX12* aDx12)
 {
 	for (UINT i = 0; i < RenderConstants::FrameCount; i++)
@@ -47,6 +60,7 @@ void MeshRenderer::UpdateRootConstants()
 {
 	rootConstants.NumInstances = dx12->instanceBuffer.size;
 	rootConstants.NumCommands = buffers[dx12->myFrameIndex].gpuSize;
+	rootConstants.FrameIndex = dx12->myFrameIndex;
 	
 	dx12->myComputeCommandList->SetComputeRoot32BitConstants(static_cast<UINT>(ComputeRootParameters::RootConstants), sizeof(RootConstants), reinterpret_cast<void*>(&rootConstants), 0);
 }
@@ -58,28 +72,31 @@ void MeshRenderer::Dispatch()
 
 	UpdateRootConstants();
 	
-	ID3D12DescriptorHeap* descriptorHeaps[] = { dx12->myComputeCbvSrvUavHeap.descriptorHeap };
-	dx12->myComputeCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-	dx12->myComputeCommandList->SetComputeRootDescriptorTable(static_cast<UINT>(ComputeRootParameters::SrvUavTable), dx12->myComputeCbvSrvUavHeap.gpuStart); 
-	
-	{
-		CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-				buffers[dx12->myFrameIndex].resource.Get(),
-				D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
-				buffers[dx12->myFrameIndex].defaultResourceState
-		);
+	buffers[dx12->myFrameIndex].Reset();
+		
+	CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+			buffers[dx12->myFrameIndex].resource.Get(),
+			D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
+			buffers[dx12->myFrameIndex].defaultResourceState
+	);
 	    
-		dx12->myComputeCommandList->ResourceBarrier(1, &barrier);
-		
-		// TODO: Reset compute shader should be ran here
-		buffers[dx12->myFrameIndex].Reset();
-		
-		UINT frameCount = GetFrameGroupCount(dx12->instanceBuffer.size);
-		dx12->myComputeCommandList->Dispatch(frameCount, 1, 1);
+	dx12->myComputeCommandList->ResourceBarrier(1, &barrier);
 
-		CD3DX12_RESOURCE_BARRIER uavBarrier = CD3DX12_RESOURCE_BARRIER::UAV(buffers[dx12->myFrameIndex].resource.Get());
-		dx12->myComputeCommandList->ResourceBarrier(1, &uavBarrier);
+	// TEMP
+	{
+		ShaderCompiler::GetPSO(2).Set(*dx12);
+		UINT frameCount = RenderConstants::GetFrameGroupCount(dx12->instanceBuffer.instanceCountBuffer.size, 1);
+		dx12->myComputeCommandList->Dispatch(frameCount, 1, 1);
 	}
+            
+	ShaderCompiler::GetPSO(1).Set(*dx12);
+	// ShaderCompiler::GetPSO(dx12->currentComputePSO).Set(*dx12);
+	
+	UINT frameCount = RenderConstants::GetFrameGroupCount(dx12->instanceBuffer.size, 64);
+	dx12->myComputeCommandList->Dispatch(frameCount, 1, 1);
+
+	CD3DX12_RESOURCE_BARRIER uavBarrier = CD3DX12_RESOURCE_BARRIER::UAV(buffers[dx12->myFrameIndex].resource.Get());
+	dx12->myComputeCommandList->ResourceBarrier(1, &uavBarrier);
 }
 
 void MeshRenderer::ExecuteIndirectRender()
@@ -113,9 +130,4 @@ void MeshRenderer::ExecuteIndirectRender()
 void MeshRenderer::OnEndFrame()
 {
 	
-}
-
-UINT MeshRenderer::GetFrameGroupCount(size_t aSize)
-{
-	return static_cast<UINT>((aSize + 63) / 64);
 }

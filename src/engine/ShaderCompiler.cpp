@@ -45,6 +45,13 @@ ShaderCompiler::~ShaderCompiler()
 		watcher.join();
 	}
 #endif
+
+	states.clear();
+	shaders.clear();
+	pathToIndex.clear();
+
+	while (!shadersToRecompile.empty())
+		shadersToRecompile.pop();
 }
 
 #if SHOULD_RECOMPILE_DURING_RUNTIME

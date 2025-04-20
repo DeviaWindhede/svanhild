@@ -9,6 +9,7 @@ struct RootConstants
 {
     UINT NumInstances;
     UINT NumCommands;
+    UINT FrameIndex;
 };
 static_assert((sizeof(RootConstants) % sizeof(UINT)) == 0, "Root Signature size must be 32bit value aligned");
 static_assert(sizeof(RootConstants) <= 64, "Root Signature size must be or below 64-bytes");
@@ -38,11 +39,13 @@ public:
     friend class DX12;
 
     explicit MeshRenderer();
+    ~MeshRenderer();
 
+    void Cleanup();
     void Create(DX12* aDx12);
     void Update(ComPtr<ID3D12GraphicsCommandList>& aComputeCommandList);
     size_t AddItem(ComPtr<ID3D12Device>& aDevice, DrawIndirectArgs* aData, size_t aSize);
-    
+
     void Dispatch();
     void ExecuteIndirectRender();
     void OnEndFrame();
@@ -50,7 +53,6 @@ private:
     static constexpr UINT MIN_BUFFER_CONTENT_SIZE = 1;
     
     void UpdateRootConstants();
-    static UINT GetFrameGroupCount(size_t aSize);
     
     RootConstants rootConstants;
     OutputCommandBuffer buffers[RenderConstants::FrameCount];

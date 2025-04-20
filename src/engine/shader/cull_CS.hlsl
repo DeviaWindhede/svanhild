@@ -4,6 +4,7 @@ cbuffer RootConstants : register(b0)
 {
     uint NumInstances;
     uint NumCommands;
+    uint FrameIndex;
 };
 
 StructuredBuffer<InstanceData> instances : register(t0, space0);
@@ -15,34 +16,29 @@ RWStructuredBuffer<DrawIndirectArgs> outputCommands[FRAME_COUNT] : register(u0, 
 [numthreads(threadBlockSize, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3 Gid : SV_GroupID)
 {
-    // uint instanceIndex = DTid.x;
-    // uint commandIndex = 0;
-    //
-    // // if (instanceIndex != 0)
-    // //     return;
-    //
-    // // if (instanceCount[1].offset != 180)
-    // //     return;
-    //
-    // if (instanceIndex >= NumInstances)
-    //     return;
-    //
-    // {
-    //     // Find which draw command this instance belongs to
-    //     uint accumulatedInstances = 0;
-    //     for (uint i = 0; i < NumCommands; i++)
-    //     {
-    //         accumulatedInstances += inputCommands[i].InstanceCount;
-    //         if (instanceIndex < accumulatedInstances)
-    //         {
-    //             commandIndex = i;
-    //             break;
-    //         }
-    //     }
-    // }
-    //
-    // if (inputCommands[commandIndex].InstanceCount == 0)
-    //     return;
-        
-    // // outputCommands[commandIndex] = inputCommands[commandIndex];
+    uint instanceIndex = DTid.x;
+    
+    if (instanceIndex >= NumInstances)
+        return;
+    
+    uint commandIndex = 0;
+    {
+        uint accumulatedInstances = 0;
+
+        for (uint i = 1; i < NumCommands; i++)
+        {
+            if (instanceIndex < instanceCount[i].offset)
+            {
+                commandIndex = i;
+                break;
+            }
+        }
+
+        uint localInstanceIndex = instanceIndex - instanceCount[commandIndex].offset;
+        bool isVisible = instances[instanceIndex].instanceTransform._31_32_33_43.w < 50;
+        if (!isVisible)
+            return;
+    }
+
+    InterlockedAdd(outputCommands[FrameIndex][commandIndex].InstanceCount, 1);
 }

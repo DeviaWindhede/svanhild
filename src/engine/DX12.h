@@ -66,19 +66,25 @@ public:
     ComPtr<ID3D12Device> myDevice;
     ComPtr<ID3D12Resource> myRenderTargets[RenderConstants::FrameCount];
     ComPtr<ID3D12Resource> myDepthBuffer;
+    
     ComPtr<ID3D12CommandAllocator> myCommandAllocator[RenderConstants::FrameCount];
     ComPtr<ID3D12CommandAllocator> myComputeCommandAllocator[RenderConstants::FrameCount];
     ComPtr<ID3D12CommandAllocator> myBundleAllocator;
+    
     ComPtr<ID3D12CommandQueue> myCommandQueue;
     ComPtr<ID3D12CommandQueue> myComputeCommandQueue;
+
     ComPtr<ID3D12CommandSignature> myCommandSignature;
+
     ComPtr<ID3D12RootSignature> myRootSignature;
     ComPtr<ID3D12RootSignature> myComputeRootSignature;
+    
     ComPtr<ID3D12DescriptorHeap> myRtvHeap;
+    ComPtr<ID3D12DescriptorHeap> myDsvHeap;
     DescriptorHeap myComputeCbvSrvUavHeap;
     DescriptorHeap mySrvHeap;
     StagingDescriptorHeap mySrvStagingHeap;
-    ComPtr<ID3D12DescriptorHeap> myDsvHeap;
+    
     ComPtr<ID3D12GraphicsCommandList> myCommandList;
     ComPtr<ID3D12GraphicsCommandList> myComputeCommandList;
     ComPtr<ID3D12GraphicsCommandList> myBundle;

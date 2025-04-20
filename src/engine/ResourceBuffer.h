@@ -13,6 +13,8 @@ public:
     explicit ResourceBuffer(D3D12_RESOURCE_STATES aResourceState);
     virtual ~ResourceBuffer();
 
+    virtual void Cleanup();
+
     virtual void Create(ComPtr<ID3D12Device>& aDevice, size_t aSize);
     virtual void Update(ComPtr<ID3D12GraphicsCommandList>& aCommandList);
     virtual size_t AddItem(ComPtr<ID3D12Device>& aDevice, T* aData, size_t aSize = 1);
@@ -46,6 +48,12 @@ ResourceBuffer<T>::ResourceBuffer(D3D12_RESOURCE_STATES aResourceState) : defaul
 
 template <typename T>
 ResourceBuffer<T>::~ResourceBuffer()
+{
+    Cleanup();
+}
+
+template <typename T>
+void ResourceBuffer<T>::Cleanup()
 {
     cpuData.clear();
     size = 0;

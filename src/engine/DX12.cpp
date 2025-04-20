@@ -103,6 +103,7 @@ void DX12::GetHardwareAdapter(
 }
 
 #define ENABLE_GPU_VALIDATION 1
+#define REPORT_LIVE_OBJECTS 1
 
 void DX12::Cleanup()
 {
@@ -112,32 +113,85 @@ void DX12::Cleanup()
     }
     ShaderCompiler::DestroyInstance();
 
-    for (UINT i = 0; i < RenderConstants::FrameCount; i++)
-    {
-        if (myRenderTargets[i])
-        {
-            myRenderTargets[i] = nullptr;
-        }
-    }
-
+    meshRenderer.Cleanup();
+    
     if (mySwapChainWaitableObject != nullptr) { CloseHandle(mySwapChainWaitableObject); }
     if (mySwapChain)
     {
         mySwapChain->SetFullscreenState(false, nullptr);
         mySwapChain = nullptr;
     }
-    for (UINT i = 0; i < RenderConstants::FrameCount; i++)
-        if (myCommandAllocator[i]) { myCommandAllocator[i] = nullptr; }
-    if (myCommandQueue) { myCommandQueue = nullptr; }
-    if (myCommandList) { myCommandList = nullptr; }
-    if (myRtvHeap) { myRtvHeap = nullptr; }
-    if (mySrvHeap.descriptorHeap) { mySrvHeap = {}; }
-    if (myFence) { myFence = nullptr; }
+    if (myBundle) myBundle = nullptr;
+    if (myCommandList) myCommandList = nullptr;
+    if (myComputeCommandList) myComputeCommandList = nullptr;
+    if (myRtvHeap) myRtvHeap = nullptr;
+    if (mySrvHeap.descriptorHeap) mySrvHeap = {};
+    if (myComputeCbvSrvUavHeap.descriptorHeap) myComputeCbvSrvUavHeap = {};
+    if (myRootSignature) myRootSignature = nullptr;
+    if (myComputeRootSignature) myComputeRootSignature = nullptr;
+
+    
+    if (myFenceEvent != nullptr && myFence != nullptr)
+    {
+        myCommandQueue->Signal(myFence.Get(), ++myFenceValues[myFrameIndex]);
+        if (myFence->GetCompletedValue() < myFenceValues[myFrameIndex]) {
+            myFence->SetEventOnCompletion(myFenceValues[myFrameIndex], myFenceEvent);
+            WaitForSingleObjectEx(myFenceEvent, INFINITE, FALSE);
+        }
+    }
+
+    if (myCommandQueue) myCommandQueue = nullptr;
+    if (myFence) myFence = nullptr;
     if (myFenceEvent)
     {
         CloseHandle(myFenceEvent);
         myFenceEvent = nullptr;
     }
+    
+    if (myComputeFenceEvent != nullptr && myComputeFence != nullptr)
+    {
+        myComputeCommandQueue->Signal(myComputeFence.Get(), ++myComputeFenceValues[myFrameIndex]);
+        if (myComputeFence->GetCompletedValue() < myComputeFenceValues[myFrameIndex]) {
+            myComputeFence->SetEventOnCompletion(myComputeFenceValues[myFrameIndex], myComputeFenceEvent);
+            WaitForSingleObjectEx(myComputeFenceEvent, INFINITE, FALSE);
+        }
+    }
+    
+    if (myBundleAllocator) myBundleAllocator = nullptr;
+    if (myComputeCommandQueue) myComputeCommandQueue = nullptr;
+    if (myComputeFence) myComputeFence = nullptr;
+    if (myCommandSignature) myCommandSignature = nullptr;
+    if (myComputeFenceEvent)
+    {
+        CloseHandle(myComputeFenceEvent);
+        myComputeFenceEvent = nullptr;
+    }
+    
+    for (UINT i = 0; i < RenderConstants::FrameCount; i++)
+    {
+        if (myRenderTargets[i]) myRenderTargets[i] = nullptr;
+        if (myCommandAllocator[i]) myCommandAllocator[i] = nullptr;
+        if (myComputeCommandAllocator[i]) myComputeCommandAllocator[i] = nullptr;
+        if (myCommandAllocator[i]) myCommandAllocator[i] = nullptr;
+        if (myComputeCommandAllocator[i]) myComputeCommandAllocator[i] = nullptr;
+        if (myProcessedCommandBuffers[i]) myProcessedCommandBuffers[i] = nullptr;
+    }
+
+    if (myDepthBuffer) myDepthBuffer = nullptr;
+    
+#if REPORT_LIVE_OBJECTS
+    {
+        OutputDebugStringA("========== LIVE OBJECT DETAILED REPORT BEGIN ==========\n");
+        
+        ComPtr<ID3D12DebugDevice> debugDevice;
+        if (SUCCEEDED(myDevice->QueryInterface(IID_PPV_ARGS(&debugDevice)))) {
+            debugDevice->ReportLiveDeviceObjects(D3D12_RLDO_DETAIL); // or D3D12_RLDO_SUMMARY
+        }
+        
+        OutputDebugStringA("========== LIVE OBJECT DETAILED REPORT END ==========\n");
+    }
+#endif
+    
     if (myDevice) { myDevice = nullptr; }
 }
 
@@ -454,6 +508,9 @@ void DX12::LoadPipeline()
         ShaderCompiler::CompileShader(L"cull", ShaderType::Compute, computeShader);
         currentPSO = ShaderCompiler::CreatePSO(vertexShader, pixelShader);
         currentComputePSO = ShaderCompiler::CreatePSO(computeShader);
+        
+        ShaderCompiler::CompileShader(L"commandReset", ShaderType::Compute, computeShader);
+        ShaderCompiler::CreatePSO(computeShader);
     }
 
     // Create synchronization objects and wait until assets have been uploaded to the GPU.
@@ -619,7 +676,11 @@ void DX12::PrepareRender()
         if (currentComputePSO < SIZE_T_MAX)
         {
             myComputeCommandList->SetComputeRootSignature(myComputeRootSignature.Get());
-            ShaderCompiler::GetPSO(currentComputePSO).Set(*this);
+
+            ID3D12DescriptorHeap* descriptorHeaps[] = { myComputeCbvSrvUavHeap.descriptorHeap };
+            myComputeCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+            myComputeCommandList->SetComputeRootDescriptorTable(static_cast<UINT>(ComputeRootParameters::SrvUavTable), myComputeCbvSrvUavHeap.gpuStart); 
+
             meshRenderer.Dispatch();
         }
         ThrowIfFailed(myComputeCommandList->Close());
