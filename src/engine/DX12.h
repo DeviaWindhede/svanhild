@@ -5,6 +5,7 @@
 #include "FrameBuffer.h"
 #include <InstanceBuffer.h>
 
+#include "BindlessDescriptorHeap.h"
 #include "MeshRenderer.h"
 
 using Microsoft::WRL::ComPtr;
@@ -16,7 +17,14 @@ enum class SrvOffsets
     Count
 };
 
-enum class ComputeUavOffsets
+enum class ComputeSrvStaticOffsets
+{
+    InstanceBuffer,
+    InstanceCount,
+    Count
+};
+
+enum class ComputeUavDynamicOffsets
 {
     CommandOutput,
     Count
@@ -53,6 +61,15 @@ public:
     static constexpr UINT MAX_CBV_COUNT = 1;
     static constexpr UINT MAX_SRV_COUNT = 4096;
     static constexpr UINT MAX_UAV_COUNT = 0; // TODO: add UAV support
+
+    static constexpr UINT MAX_COMPUTE_STATIC_CBV_COUNT = 0;
+    static constexpr UINT MAX_COMPUTE_STATIC_SRV_COUNT = static_cast<UINT>(ComputeSrvStaticOffsets::Count);
+    static constexpr UINT MAX_COMPUTE_STATIC_UAV_COUNT = 0;
+    
+    static constexpr UINT MAX_COMPUTE_PER_FRAME_CBV_COUNT = 0;
+    static constexpr UINT MAX_COMPUTE_PER_FRAME_SRV_COUNT = 0;
+    static constexpr UINT MAX_COMPUTE_PER_FRAME_UAV_COUNT = static_cast<UINT>(ComputeUavDynamicOffsets::Count);
+    
     static constexpr UINT MAX_BOUND_SRV_COUNT = 64;
     static constexpr UINT INSTANCE_BUFFER_SIZE = 4096;
 
@@ -61,10 +78,10 @@ public:
     static constexpr UINT UAV_SIZE = 0;
     static constexpr UINT CBV_SRV_UAV_SIZE = CBV_SIZE + SRV_SIZE + UAV_SIZE; //* FrameCount; // 2srv + 1uav
 
-    static constexpr UINT COMPUTE_CBV_SIZE = 0; // TODO: Change to 2 here
-    static constexpr UINT COMPUTE_SRV_SIZE = static_cast<UINT>(SrvOffsets::Count);
-    static constexpr UINT COMPUTE_UAV_SIZE = RenderConstants::FrameCount * static_cast<UINT>(ComputeUavOffsets::Count);
-    static constexpr UINT COMPUTE_CBV_SRV_UAV_SIZE = COMPUTE_CBV_SIZE + COMPUTE_SRV_SIZE + COMPUTE_UAV_SIZE; //* FrameCount; // 2srv + 1uav
+    // static constexpr UINT COMPUTE_CBV_SIZE = 0; // TODO: Change to 2 here
+    // static constexpr UINT COMPUTE_SRV_SIZE = static_cast<UINT>(SrvOffsets::Count);
+    // static constexpr UINT COMPUTE_UAV_SIZE = RenderConstants::FrameCount * static_cast<UINT>(ComputeUavOffsets::Count);
+    // static constexpr UINT COMPUTE_CBV_SRV_UAV_SIZE = COMPUTE_CBV_SIZE + COMPUTE_SRV_SIZE + COMPUTE_UAV_SIZE; //* FrameCount; // 2srv + 1uav
 
     // Pipeline objects
     CD3DX12_VIEWPORT myViewport;
@@ -88,7 +105,8 @@ public:
     
     ComPtr<ID3D12DescriptorHeap> myRtvHeap;
     ComPtr<ID3D12DescriptorHeap> myDsvHeap;
-    DescriptorHeap myComputeCbvSrvUavHeap;
+    
+    BindlessDescriptorHeap myComputeCbvSrvUavHeap;
     DescriptorHeap mySrvHeap;
     StagingDescriptorHeap mySrvStagingHeap;
     

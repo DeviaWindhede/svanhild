@@ -2,7 +2,7 @@
 
 StructuredBuffer<InstanceData> instances : register(t0, space0);
 StructuredBuffer<InstanceCountData> instanceCount : register(t1, space0);
-RWStructuredBuffer<DrawIndirectArgs> outputCommands[FRAME_COUNT] : register(u0, space0);
+RWStructuredBuffer<DrawIndirectArgs> outputCommands[FRAME_COUNT] : register(u0, space1);
 
 #define threadBlockSize 64
 

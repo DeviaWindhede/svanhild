@@ -126,7 +126,7 @@ void DX12::Cleanup()
     if (myComputeCommandList) myComputeCommandList = nullptr;
     if (myRtvHeap) myRtvHeap = nullptr;
     if (mySrvHeap.descriptorHeap) mySrvHeap = {};
-    if (myComputeCbvSrvUavHeap.descriptorHeap) myComputeCbvSrvUavHeap = {};
+    if (myComputeCbvSrvUavHeap.GetHeap()) myComputeCbvSrvUavHeap = {};
     if (myRootSignature) myRootSignature = nullptr;
     if (myComputeRootSignature) myComputeRootSignature = nullptr;
 
@@ -314,8 +314,16 @@ void DX12::LoadPipeline()
             mySrvStagingHeap.Init(myDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_SRV_COUNT, false);
             mySrvHeap.descriptorHeap->SetName(L"CBV_SRV_UAV_HEAP_STAGING");
 
-            myComputeCbvSrvUavHeap.Init(myDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, COMPUTE_CBV_SRV_UAV_SIZE, true);
-            myComputeCbvSrvUavHeap.descriptorHeap->SetName(L"COMPUTE_CBV_SRV_UAV_HEAP");
+            myComputeCbvSrvUavHeap.Init(
+                myDevice.Get(),
+                MAX_COMPUTE_STATIC_CBV_COUNT,
+                MAX_COMPUTE_STATIC_SRV_COUNT,
+                MAX_COMPUTE_STATIC_UAV_COUNT,
+                MAX_COMPUTE_PER_FRAME_CBV_COUNT,
+                MAX_COMPUTE_PER_FRAME_SRV_COUNT,
+                MAX_COMPUTE_PER_FRAME_UAV_COUNT
+            );
+            myComputeCbvSrvUavHeap.GetHeap()->SetName(L"COMPUTE_CBV_SRV_UAV_HEAP");
         }
 
         frameBuffer.Init(myDevice.Get());
@@ -397,12 +405,19 @@ void DX12::LoadPipeline()
 
     // Compute shader root signature
     {
-        CD3DX12_DESCRIPTOR_RANGE1 ranges[2];
-        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, COMPUTE_SRV_SIZE, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE); // instance buffer and instance count buffer
-        ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, COMPUTE_UAV_SIZE, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE); // output commands buffer array
 
         CD3DX12_ROOT_PARAMETER1 rootParameters[static_cast<UINT>(ComputeRootParameters::Count)];
-        rootParameters[static_cast<UINT>(ComputeRootParameters::SrvUavTable)].InitAsDescriptorTable(_countof(ranges), ranges);
+
+        {
+            CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
+            ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_COMPUTE_STATIC_SRV_COUNT, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE); // instance buffer and instance count buffer
+            rootParameters[static_cast<UINT>(ComputeRootParameters::CbvSrvUavTable)].InitAsDescriptorTable(_countof(ranges), ranges);
+        }
+        {
+            CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
+            ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, MAX_COMPUTE_PER_FRAME_UAV_COUNT * RenderConstants::FrameCount, 0, 1, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE); // output commands buffer array
+            rootParameters[static_cast<UINT>(ComputeRootParameters::PerFrameCbvSrvUavTable)].InitAsDescriptorTable(_countof(ranges), ranges);
+        }
         rootParameters[static_cast<UINT>(ComputeRootParameters::FrameBuffer)].InitAsConstantBufferView(0, 0);
         rootParameters[static_cast<UINT>(ComputeRootParameters::RootConstants)].InitAsConstants(sizeof(RootConstants) / sizeof(float), 0, 1);
         
@@ -412,7 +427,19 @@ void DX12::LoadPipeline()
 
         ID3DBlob* signature;
         ID3DBlob* error;
-        D3D12SerializeVersionedRootSignature(&rootSignatureDesc, &signature, &error);
+        if (FAILED(D3D12SerializeVersionedRootSignature(&rootSignatureDesc, &signature, &error)))
+        {
+            if (error)
+            {
+                // Convert the error message from the blob to a string
+                std::string errorMsg(static_cast<char*>(error->GetBufferPointer()), error->GetBufferSize());
+                OutputDebugStringA(("Failed to serialize root signature: " + errorMsg).c_str());
+            }
+            else
+            {
+                OutputDebugStringA("Failed to serialize root signature, no error blob available.");
+            }
+        }
         myDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
                                       IID_PPV_ARGS(&myComputeRootSignature));
         NAME_D3D12_OBJECT(myComputeRootSignature);
@@ -678,9 +705,10 @@ void DX12::PrepareRender()
         {
             myComputeCommandList->SetComputeRootSignature(myComputeRootSignature.Get());
 
-            ID3D12DescriptorHeap* descriptorHeaps[] = { myComputeCbvSrvUavHeap.descriptorHeap };
+            ID3D12DescriptorHeap* descriptorHeaps[] = { myComputeCbvSrvUavHeap.GetHeap() };
             myComputeCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-            myComputeCommandList->SetComputeRootDescriptorTable(static_cast<UINT>(ComputeRootParameters::SrvUavTable), myComputeCbvSrvUavHeap.gpuStart); 
+            myComputeCommandList->SetComputeRootDescriptorTable(static_cast<UINT>(ComputeRootParameters::CbvSrvUavTable), myComputeCbvSrvUavHeap.GetGPUHandle()); 
+            myComputeCommandList->SetComputeRootDescriptorTable(static_cast<UINT>(ComputeRootParameters::PerFrameCbvSrvUavTable), myComputeCbvSrvUavHeap.GetPerFrameGPUHandle(0, 0)); 
             myComputeCommandList->SetComputeRootConstantBufferView(static_cast<UINT>(ComputeRootParameters::FrameBuffer), frameBuffer.resource->GetGPUVirtualAddress());
 
             meshRenderer.Dispatch();

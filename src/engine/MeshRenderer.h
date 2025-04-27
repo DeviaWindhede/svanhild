@@ -15,7 +15,8 @@ static_assert(sizeof(RootConstants) <= 64, "Root Signature size must be or below
 
 enum class ComputeRootParameters
 {
-    SrvUavTable,
+    CbvSrvUavTable,
+    PerFrameCbvSrvUavTable,
     FrameBuffer,
     RootConstants,
     Count
