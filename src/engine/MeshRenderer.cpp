@@ -58,8 +58,10 @@ size_t MeshRenderer::AddItem(ComPtr<ID3D12Device>& aDevice, DrawIndirectArgs* aD
 
 void MeshRenderer::UpdateRootConstants()
 {
-	rootConstants.NumInstances = dx12->instanceBuffer.size;
-	rootConstants.NumCommands = buffers[dx12->myFrameIndex].gpuSize;
+	rootConstants.InstanceLength = dx12->instanceBuffer.gpuSize;
+	rootConstants.InstanceCapacity = dx12->instanceBuffer.cpuData.size();
+	rootConstants.CommandLength = buffers[dx12->myFrameIndex].gpuSize;
+	rootConstants.CommandCapacity = buffers[dx12->myFrameIndex].cpuData.size();
 	
 	dx12->myComputeCommandList->SetComputeRoot32BitConstants(static_cast<UINT>(ComputeRootParameters::RootConstants), sizeof(RootConstants) / sizeof(float), reinterpret_cast<void*>(&rootConstants), 0);
 }
@@ -73,13 +75,21 @@ void MeshRenderer::Dispatch()
 	
 	buffers[dx12->myFrameIndex].Reset();
 		
-	CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+	CD3DX12_RESOURCE_BARRIER barriers[2]
+	{
+		CD3DX12_RESOURCE_BARRIER::Transition(
 			buffers[dx12->myFrameIndex].resource.Get(),
 			D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
 			buffers[dx12->myFrameIndex].defaultResourceState
-	);
-	    
-	dx12->myComputeCommandList->ResourceBarrier(1, &barrier);
+		),
+		CD3DX12_RESOURCE_BARRIER::Transition(
+			dx12->instanceBuffer.visibleInstancesBuffer[dx12->myFrameIndex].resource.Get(),
+			D3D12_RESOURCE_STATE_COMMON,
+			dx12->instanceBuffer.visibleInstancesBuffer[dx12->myFrameIndex].defaultResourceState
+		)
+	};
+            
+	dx12->myComputeCommandList->ResourceBarrier(_countof(barriers), barriers);
 
 	// TEMP
 	{
@@ -104,12 +114,17 @@ void MeshRenderer::ExecuteIndirectRender()
 		return;
 	
 	{
-		CD3DX12_RESOURCE_BARRIER barriers[1]
+		CD3DX12_RESOURCE_BARRIER barriers[2]
 		{
 			CD3DX12_RESOURCE_BARRIER::Transition(
 				buffers[dx12->myFrameIndex].resource.Get(),
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
 				D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT
+			),
+			CD3DX12_RESOURCE_BARRIER::Transition(
+				dx12->instanceBuffer.visibleInstancesBuffer[dx12->myFrameIndex].resource.Get(),
+				dx12->instanceBuffer.visibleInstancesBuffer[dx12->myFrameIndex].defaultResourceState,
+				D3D12_RESOURCE_STATE_COMMON
 			)
 		};
             

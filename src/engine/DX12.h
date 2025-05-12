@@ -27,6 +27,7 @@ enum class ComputeSrvStaticOffsets
 enum class ComputeUavDynamicOffsets
 {
     CommandOutput,
+    VisibleInstanceIndices,
     Count
 };
 

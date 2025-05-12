@@ -3,6 +3,7 @@
 #include <queue>
 
 #include "InstanceCountBuffer.h"
+#include "RenderConstants.h"
 #include "ResourceBuffer.h"
 #include "SceneBufferTypes.h"
 
@@ -22,6 +23,10 @@ public:
 
     InstanceCountBuffer instanceCountBuffer;
     D3D12_VERTEX_BUFFER_VIEW instanceBufferView;
+
+    ResourceBuffer<UINT> visibleInstancesBuffer[RenderConstants::FrameCount];
+    CD3DX12_CPU_DESCRIPTOR_HANDLE visibleInstanceUavHandle[RenderConstants::FrameCount];
+    CD3DX12_CPU_DESCRIPTOR_HANDLE visibleInstanceSrvHandle[RenderConstants::FrameCount];
 private:
     size_t tempModelIndex = 0;
     class DX12* dx12 = nullptr;

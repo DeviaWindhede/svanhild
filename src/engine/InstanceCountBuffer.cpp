@@ -12,7 +12,7 @@ dx12(aDx12)
 void InstanceCountBuffer::Create(ComPtr<ID3D12Device>& aDevice, size_t aSize)
 {
     ResourceBuffer<InstanceCountData>::Create(aDevice, aSize);
-    
+    resource->SetName(L"InstanceCountBuffer");
     {
         CD3DX12_CPU_DESCRIPTOR_HANDLE handle(dx12->myComputeCbvSrvUavHeap.GetStaticCPUHandle(static_cast<UINT>(SrvOffsets::InstanceCount)));
         

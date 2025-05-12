@@ -36,7 +36,7 @@ public:
     bool dirty = false;
     bool wasDirty = false;
 protected:
-    virtual void Create(ComPtr<ID3D12Device>& aDevice, size_t aSize, D3D12_RESOURCE_DESC aDesc);
+    virtual void Create(ComPtr<ID3D12Device>& aDevice, size_t aSize, D3D12_RESOURCE_DESC aDesc, LPCWSTR aName);
     
     std::vector<size_t> indexOffsets{};
 };
@@ -65,11 +65,11 @@ void ResourceBuffer<T>::Cleanup()
 template <typename T>
 void ResourceBuffer<T>::Create(ComPtr<ID3D12Device>& aDevice, size_t aSize)
 {
-    Create(aDevice, aSize, CD3DX12_RESOURCE_DESC::Buffer(aSize * sizeof(T)));
+    Create(aDevice, aSize, CD3DX12_RESOURCE_DESC::Buffer(aSize * sizeof(T)), L"SharedBuffer_Resource");
 }
 
 template <typename T>
-void ResourceBuffer<T>::Create(ComPtr<ID3D12Device>& aDevice, size_t aSize, D3D12_RESOURCE_DESC aDesc)
+void ResourceBuffer<T>::Create(ComPtr<ID3D12Device>& aDevice, size_t aSize, D3D12_RESOURCE_DESC aDesc, LPCWSTR aName)
 {
     gpuSize = 0;
     cpuData.resize(aSize);
@@ -97,7 +97,7 @@ void ResourceBuffer<T>::Create(ComPtr<ID3D12Device>& aDevice, size_t aSize, D3D1
             nullptr,
             IID_PPV_ARGS(&resource)
         ));
-        resource->SetName(L"SharedBuffer_Resource");
+        resource->SetName(aName);
     }
 
     // upload

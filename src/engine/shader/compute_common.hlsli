@@ -8,7 +8,9 @@ cbuffer SceneConstantBuffer : register(b0, space0)
 
 cbuffer RootConstants : register(b0, space1)
 {
-    uint NumInstances;
-    uint NumCommands;
+    uint InstanceLength;
+    uint InstanceCapacity;
+    uint CommandLength;
+    uint CommandCapacity;
 };
 

@@ -7,8 +7,10 @@
 
 struct RootConstants
 {
-    UINT NumInstances;
-    UINT NumCommands;
+    UINT InstanceLength;
+    UINT InstanceCapacity;
+    UINT CommandLength;
+    UINT CommandCapacity;
 };
 static_assert((sizeof(RootConstants) % sizeof(UINT)) == 0, "Root Signature size must be 32bit value aligned");
 static_assert(sizeof(RootConstants) <= 64, "Root Signature size must be or below 64-bytes");

@@ -50,12 +50,12 @@ void OutputCommandBuffer::Create(ComPtr<ID3D12Device>& aDevice, size_t aSize)
 	argsDesc.SampleDesc.Count = 1;
 	argsDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
 	
-	ResourceBuffer<DrawIndirectArgs>::Create(aDevice, aSize, argsDesc);
+	ResourceBuffer<DrawIndirectArgs>::Create(aDevice, aSize, argsDesc, L"OutputCommandBuffer");
 
 	if (aSize == 0)
 		return;
 	
-	resource->SetName(L"outputCommandArgs");
+	resource->SetName(std::wstring(L"OutputCommandBuffer" + std::to_wstring(indexOffset)).c_str());
 }
 
 void OutputCommandBuffer::CreateResourceViews()
