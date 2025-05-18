@@ -74,10 +74,10 @@ void Texture::LoadToGPU(DX12* aDx12, ResourceBuffers*)
 		srvDesc.Format = textureDesc.Format;
 		srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
 		srvDesc.Texture2D.MipLevels = 1;
+		
+		// descriptorHandle = aDx12->myTextureHeap.GetNewHeapHandle();
 
-		descriptorHandle = aDx12->mySrvStagingHeap.GetNewHeapHandle();
-
-		aDx12->myDevice->CreateShaderResourceView(resource.Get(), &srvDesc, descriptorHandle.cpuHandle);
+		aDx12->myDevice->CreateShaderResourceView(resource.Get(), &srvDesc, aDx12->myTextureHeap.GetCPUHandle());
 	}
 }
 
@@ -89,14 +89,15 @@ void Texture::OnGPULoadComplete(class DX12* aDx12, struct ResourceBuffers* aBuff
 
 void Texture::UnloadCPU(DX12* aDx12, struct ResourceBuffers*)
 {
-	aDx12->mySrvStagingHeap.FreeHeapHandle(descriptorHandle);
+	// TODO
+	//aDx12->myTextureHeap.FreeHeapHandle(descriptorHandle);
 }
 
 bool Texture::Bind(UINT aSlot, DX12* aDx12)
 {
 	if (!GPUInitialized())
 		return false;
-
+/*
 	D3D12_CPU_DESCRIPTOR_HANDLE srcHandle = descriptorHandle.cpuHandle;
 	D3D12_CPU_DESCRIPTOR_HANDLE destHandle = aDx12->mySrvHeap.cpuStart;
 
@@ -106,6 +107,7 @@ bool Texture::Bind(UINT aSlot, DX12* aDx12)
 	// TODO: Fix bindless textures so we dont need to use this whack code
 	aDx12->myDevice->CopyDescriptorsSimple(1, destHandle, srcHandle, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
+	*/
 	return true;
 }
 

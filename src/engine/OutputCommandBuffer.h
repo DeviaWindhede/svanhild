@@ -1,12 +1,15 @@
 ﻿#pragma once
 #include "ResourceBuffer.h"
 
+struct DrawIndirectArgsData
+{
+    UINT StartInstanceOffset;
+    UINT MeshIndex;
+};
+
 struct DrawIndirectArgs {
-    UINT IndexCountPerInstance;
-    UINT InstanceCount;
-    UINT StartIndexLocation;
-    UINT BaseVertexLocation;
-    UINT StartInstanceLocation;
+    DrawIndirectArgsData data;
+    D3D12_DRAW_INDEXED_ARGUMENTS drawArgs;
 };
 
 class OutputCommandBuffer : public ResourceBuffer<DrawIndirectArgs>

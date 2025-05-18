@@ -57,13 +57,26 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3
         }
 
         uint localInstanceIndex = instanceIndex - instanceCount[commandIndex].offset;
-        bool isVisible = instances[instanceIndex].instanceTransform._31_32_33_43.w < 50;
+
+        bool isVisible = true;
+        // isVisible = instances[instanceIndex].instanceTransform._31_32_33_43.w < 50;
+        // isVisible = localInstanceIndex % 2 == 1;
         if (!isVisible)
             return;
     }
+    
+    uint previousValue = 0;
     // TEMP
     if (frameBuffer.g_frameIndex == 0)
-        InterlockedAdd(outputCommands0[commandIndex].InstanceCount, 1);
+    {
+        InterlockedAdd(outputCommands0[commandIndex].args.InstanceCount, 1, previousValue);
+        previousValue += outputCommands0[commandIndex].args.StartInstanceLocation;
+        visibleInstanceIndices0[previousValue] = instanceIndex;
+    }
     else
-        InterlockedAdd(outputCommands1[commandIndex].InstanceCount, 1);
+    {
+        InterlockedAdd(outputCommands1[commandIndex].args.InstanceCount, 1, previousValue);
+        previousValue += outputCommands0[commandIndex].args.StartInstanceLocation;
+        visibleInstanceIndices1[previousValue] = instanceIndex;
+    }
 }

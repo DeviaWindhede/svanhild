@@ -125,7 +125,6 @@ void DX12::Cleanup()
     if (myCommandList) myCommandList = nullptr;
     if (myComputeCommandList) myComputeCommandList = nullptr;
     if (myRtvHeap) myRtvHeap = nullptr;
-    if (mySrvHeap.descriptorHeap) mySrvHeap = {};
     if (myComputeCbvSrvUavHeap.GetHeap()) myComputeCbvSrvUavHeap = {};
     if (myRootSignature) myRootSignature = nullptr;
     if (myComputeRootSignature) myComputeRootSignature = nullptr;
@@ -309,10 +308,25 @@ void DX12::LoadPipeline()
             ThrowIfFailed(myDevice->CreateDescriptorHeap(&rtvHeapDesc, IID_PPV_ARGS(&myRtvHeap)));
             myRtvDescriptorSize = myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
 
-            mySrvHeap.Init(myDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_BOUND_SRV_COUNT, true);
-            mySrvHeap.descriptorHeap->SetName(L"CBV_SRV_UAV_HEAP");
-            mySrvStagingHeap.Init(myDevice.Get(), D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, MAX_SRV_COUNT, false);
-            mySrvHeap.descriptorHeap->SetName(L"CBV_SRV_UAV_HEAP_STAGING");
+            myGraphicsCbvSrvUavHeap.Init(
+                myDevice.Get(),
+                MAX_GRAPHICS_STATIC_CBV_COUNT,
+                MAX_GRAPHICS_STATIC_SRV_COUNT,
+                MAX_GRAPHICS_STATIC_UAV_COUNT,
+                MAX_GRAPHICS_PER_FRAME_CBV_COUNT,
+                MAX_GRAPHICS_PER_FRAME_SRV_COUNT,
+                MAX_GRAPHICS_PER_FRAME_UAV_COUNT
+            );
+            myGraphicsCbvSrvUavHeap.GetHeap()->SetName(L"CBV_SRV_UAV_HEAP");
+            myTextureHeap.Init(
+                myDevice.Get(),
+                0,
+                MAX_TEXTURE_COUNT,
+                0,
+                0,
+                0,
+                0
+            );
 
             myComputeCbvSrvUavHeap.Init(
                 myDevice.Get(),
@@ -366,15 +380,24 @@ void DX12::LoadPipeline()
             featureData.HighestVersion = D3D_ROOT_SIGNATURE_VERSION_1_0;
         }
 
-        CD3DX12_DESCRIPTOR_RANGE1 ranges[1]{};
-        ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_BOUND_SRV_COUNT, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-        //ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_BOUND_SRV_COUNT, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-        //ranges[1].Init(D3D12_DESCRIPTOR_RANGE_TYPE_CBV, 1, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
-
-        CD3DX12_ROOT_PARAMETER1 rootParameters[static_cast<UINT>(GraphicsRootParameters::Count)]{{}, {}};
-        rootParameters[static_cast<UINT>(GraphicsRootParameters::CbvSrvUav)].InitAsDescriptorTable(1, &ranges[0], D3D12_SHADER_VISIBILITY_PIXEL);
-        rootParameters[static_cast<UINT>(GraphicsRootParameters::FrameBuffer)].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_VERTEX);
-
+        CD3DX12_ROOT_PARAMETER1 rootParameters[static_cast<UINT>(GraphicsRootParameters::Count)];
+        {
+            CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
+            ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_GRAPHICS_STATIC_SRV_COUNT + MAX_GRAPHICS_PER_FRAME_SRV_COUNT * RenderConstants::FrameCount, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+            rootParameters[static_cast<UINT>(GraphicsRootParameters::CbvSrvUav)].InitAsDescriptorTable(_countof(ranges), ranges, D3D12_SHADER_VISIBILITY_ALL);
+        }
+        {
+            rootParameters[static_cast<UINT>(GraphicsRootParameters::FrameBuffer)].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_ALL);
+        }
+        {
+            rootParameters[static_cast<UINT>(GraphicsRootParameters::RenderConstants)].InitAsConstants(sizeof(DrawIndirectArgsData) / sizeof(float), 1, 0, D3D12_SHADER_VISIBILITY_VERTEX);
+        }
+        {
+            CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
+            ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_TEXTURE_COUNT, 0, 1, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+            rootParameters[static_cast<UINT>(GraphicsRootParameters::Textures)].InitAsDescriptorTable(_countof(ranges), ranges, D3D12_SHADER_VISIBILITY_PIXEL);
+        }
+        
         D3D12_STATIC_SAMPLER_DESC sampler = {};
         sampler.Filter = D3D12_FILTER_MIN_MAG_MIP_POINT;
         sampler.AddressU = D3D12_TEXTURE_ADDRESS_MODE_CLAMP;
@@ -396,8 +419,19 @@ void DX12::LoadPipeline()
 
         ComPtr<ID3DBlob> signature;
         ComPtr<ID3DBlob> error;
-        ThrowIfFailed(
-            D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, featureData.HighestVersion, &signature, &error));
+        if (FAILED(D3DX12SerializeVersionedRootSignature(&rootSignatureDesc, featureData.HighestVersion, &signature, &error)))
+        {
+            if (error)
+            {
+                // Convert the error message from the blob to a string
+                std::string errorMsg(static_cast<char*>(error->GetBufferPointer()), error->GetBufferSize());
+                OutputDebugStringA(("Failed to serialize root signature: " + errorMsg).c_str());
+            }
+            else
+            {
+                OutputDebugStringA("Failed to serialize root signature, no error blob available.");
+            }
+        }
         ThrowIfFailed(myDevice->CreateRootSignature(0, signature->GetBufferPointer(), signature->GetBufferSize(),
                                                     IID_PPV_ARGS(&myRootSignature)));
         NAME_D3D12_OBJECT(myRootSignature);
@@ -447,26 +481,28 @@ void DX12::LoadPipeline()
 
     // Create the command signature used for indirect drawing.
     {
-        D3D12_INDIRECT_ARGUMENT_DESC argumentDescs[1] = {};
+        D3D12_INDIRECT_ARGUMENT_DESC argumentDescs[2] = {};
 
-        // Define a DrawIndexedInstancedIndirect command
-        argumentDescs[0].Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
+        argumentDescs[0].Type = D3D12_INDIRECT_ARGUMENT_TYPE_CONSTANT;
+        argumentDescs[0].Constant.RootParameterIndex = static_cast<UINT>(GraphicsRootParameters::RenderConstants);
+        argumentDescs[0].Constant.DestOffsetIn32BitValues = 0;
+        argumentDescs[0].Constant.Num32BitValuesToSet = sizeof(DrawIndirectArgsData) / 4; // For InstanceDataOffset + MeshIndex
 
-        // Describe the command signature
+        argumentDescs[1].Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
+        
         D3D12_COMMAND_SIGNATURE_DESC commandSignatureDesc = {};
-        commandSignatureDesc.ByteStride = sizeof(D3D12_DRAW_INDEXED_ARGUMENTS); // Size of arguments
+        commandSignatureDesc.ByteStride = sizeof(DrawIndirectArgs);
         commandSignatureDesc.NumArgumentDescs = _countof(argumentDescs);
         commandSignatureDesc.pArgumentDescs = argumentDescs;
         commandSignatureDesc.NodeMask = 0;
 
-        // Create the command signature
-        myDevice->CreateCommandSignature(&commandSignatureDesc, nullptr, IID_PPV_ARGS(&myCommandSignature));
+        ThrowIfFailed(myDevice->CreateCommandSignature(&commandSignatureDesc, myRootSignature.Get(), IID_PPV_ARGS(&myCommandSignature)));
     }
 
     // Depth buffer 
     {
         D3D12_HEAP_PROPERTIES dsHeapProperties;
-        ZeroMemory(&dsHeapProperties, sizeof(&dsHeapProperties));
+        ZeroMemory(&dsHeapProperties, sizeof(dsHeapProperties));
 
         dsHeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
         dsHeapProperties.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
@@ -575,32 +611,6 @@ void DX12::LoadPipeline()
 
     myCommandList->SetName(L"Main_CommandList_Direct");
     myCommandList->SetName(L"Main_CommandList_Compute");
-
-    // SRV
-    {
-        D3D12_SHADER_RESOURCE_VIEW_DESC nullSrvDesc = {};
-        nullSrvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        nullSrvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        // A default format (it doesn't matter much since we won't be reading it)
-        nullSrvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-        nullSrvDesc.Texture2D.MostDetailedMip = 0;
-        nullSrvDesc.Texture2D.MipLevels = 0;
-
-        cbvSrvUavDescriptorSize = myDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
-        CD3DX12_CPU_DESCRIPTOR_HANDLE srvHandle(mySrvHeap.cpuStart);
-        CD3DX12_CPU_DESCRIPTOR_HANDLE srvStagingHandle(mySrvStagingHeap.cpuStart);
-        ID3D12Resource* nullResource = nullptr;
-        for (UINT n = 0; n < MAX_SRV_COUNT; n++)
-        {
-            if (n < MAX_BOUND_SRV_COUNT)
-            {
-                myDevice->CreateShaderResourceView(nullResource, &nullSrvDesc, srvHandle);
-                srvHandle.Offset(1, cbvSrvUavDescriptorSize);
-            }
-            myDevice->CreateShaderResourceView(nullResource, &nullSrvDesc, srvStagingHandle);
-            srvStagingHandle.Offset(1, cbvSrvUavDescriptorSize);
-        }
-    }
 
     {
         // Create shader resource views (SRV) of the constant buffers for the
@@ -724,11 +734,10 @@ void DX12::PrepareRender()
     {
         myCommandList->SetGraphicsRootSignature(myRootSignature.Get());
 
-        ID3D12DescriptorHeap* ppHeaps[] = {mySrvHeap.descriptorHeap};
+        ID3D12DescriptorHeap* ppHeaps[] = {myGraphicsCbvSrvUavHeap.GetHeap()};
         myCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
-        D3D12_GPU_DESCRIPTOR_HANDLE gpuHandle = mySrvHeap.gpuStart;
-        myCommandList->SetGraphicsRootDescriptorTable(static_cast<UINT>(GraphicsRootParameters::CbvSrvUav), gpuHandle);
+        myCommandList->SetGraphicsRootDescriptorTable(static_cast<UINT>(GraphicsRootParameters::CbvSrvUav), myGraphicsCbvSrvUavHeap.GetGPUHandle());
         myCommandList->SetGraphicsRootConstantBufferView(static_cast<UINT>(GraphicsRootParameters::FrameBuffer), frameBuffer.resource->GetGPUVirtualAddress());
 
         myCommandList->RSSetViewports(1, &myViewport);

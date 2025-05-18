@@ -10,10 +10,25 @@
 
 using Microsoft::WRL::ComPtr;
 
-enum class SrvOffsets
+enum class GraphicsRootParameters
+{
+    CbvSrvUav,
+    FrameBuffer,
+    RenderConstants,
+    Textures,
+    Count
+};
+
+enum class GraphicsSrvStaticOffsets
 {
     InstanceBuffer,
     InstanceCount,
+    Count
+};
+
+enum class GraphicsSrvDynamicOffsets
+{
+    VisibleInstanceIndices,
     Count
 };
 
@@ -31,12 +46,6 @@ enum class ComputeUavDynamicOffsets
     Count
 };
 
-enum class GraphicsRootParameters
-{
-    CbvSrvUav,
-    FrameBuffer,
-    Count
-};
 
 class DX12
 {
@@ -59,9 +68,13 @@ public:
         _Outptr_result_maybenull_ IDXGIAdapter1** ppAdapter,
         bool requestHighPerformanceAdapter = false);
 
-    static constexpr UINT MAX_CBV_COUNT = 1;
-    static constexpr UINT MAX_SRV_COUNT = 4096;
-    static constexpr UINT MAX_UAV_COUNT = 0; // TODO: add UAV support
+    static constexpr UINT MAX_GRAPHICS_STATIC_CBV_COUNT = 0;
+    static constexpr UINT MAX_GRAPHICS_STATIC_SRV_COUNT = static_cast<UINT>(GraphicsSrvStaticOffsets::Count);
+    static constexpr UINT MAX_GRAPHICS_STATIC_UAV_COUNT = 0;
+    
+    static constexpr UINT MAX_GRAPHICS_PER_FRAME_CBV_COUNT = 0;
+    static constexpr UINT MAX_GRAPHICS_PER_FRAME_SRV_COUNT = static_cast<UINT>(GraphicsSrvDynamicOffsets::Count);
+    static constexpr UINT MAX_GRAPHICS_PER_FRAME_UAV_COUNT = 0;
 
     static constexpr UINT MAX_COMPUTE_STATIC_CBV_COUNT = 0;
     static constexpr UINT MAX_COMPUTE_STATIC_SRV_COUNT = static_cast<UINT>(ComputeSrvStaticOffsets::Count);
@@ -71,14 +84,13 @@ public:
     static constexpr UINT MAX_COMPUTE_PER_FRAME_SRV_COUNT = 0;
     static constexpr UINT MAX_COMPUTE_PER_FRAME_UAV_COUNT = static_cast<UINT>(ComputeUavDynamicOffsets::Count);
     
-    static constexpr UINT MAX_BOUND_SRV_COUNT = 64;
-    static constexpr UINT INSTANCE_BUFFER_SIZE = 4096;
-
     static constexpr UINT CBV_SIZE = 0; // TODO: Change to 2 here
-    static constexpr UINT SRV_SIZE = static_cast<UINT>(SrvOffsets::Count);
+    static constexpr UINT SRV_SIZE = static_cast<UINT>(ComputeSrvStaticOffsets::Count);
     static constexpr UINT UAV_SIZE = 0;
     static constexpr UINT CBV_SRV_UAV_SIZE = CBV_SIZE + SRV_SIZE + UAV_SIZE; //* FrameCount; // 2srv + 1uav
 
+
+    static constexpr UINT MAX_TEXTURE_COUNT = 4096;
     // static constexpr UINT COMPUTE_CBV_SIZE = 0; // TODO: Change to 2 here
     // static constexpr UINT COMPUTE_SRV_SIZE = static_cast<UINT>(SrvOffsets::Count);
     // static constexpr UINT COMPUTE_UAV_SIZE = RenderConstants::FrameCount * static_cast<UINT>(ComputeUavOffsets::Count);
@@ -108,8 +120,8 @@ public:
     ComPtr<ID3D12DescriptorHeap> myDsvHeap;
     
     BindlessDescriptorHeap myComputeCbvSrvUavHeap;
-    DescriptorHeap mySrvHeap;
-    StagingDescriptorHeap mySrvStagingHeap;
+    BindlessDescriptorHeap myGraphicsCbvSrvUavHeap;
+    BindlessDescriptorHeap myTextureHeap;
     
     ComPtr<ID3D12GraphicsCommandList> myCommandList;
     ComPtr<ID3D12GraphicsCommandList> myComputeCommandList;

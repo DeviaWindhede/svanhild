@@ -16,12 +16,12 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3
     // TEMP
     if (frameBuffer.g_frameIndex == 0)
     {
-        outputCommands0[DTid.x].InstanceCount = 0;
+        outputCommands0[DTid.x].args.InstanceCount = 0;
         visibleInstanceIndices0[0] = 0;
         return;
     }
     
-    outputCommands1[DTid.x].InstanceCount = 0;
+    outputCommands1[DTid.x].args.InstanceCount = 0;
     visibleInstanceIndices1[0] = 0;
 
     

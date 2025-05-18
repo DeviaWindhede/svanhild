@@ -72,7 +72,7 @@ void D3D12Window::OnBeginFrame()
 	
 	dx12.myCommandList->IASetVertexBuffers(0, 1, &resourceLoader.GetBuffers().vertexBuffer.vbv);
 	dx12.myCommandList->IASetIndexBuffer(&resourceLoader.GetBuffers().indexBuffer.ibv);
-	dx12.myCommandList->IASetVertexBuffers(1, 1, &dx12.instanceBuffer.instanceBufferView);
+	//dx12.myCommandList->IASetVertexBuffers(1, 1, &dx12.instanceBuffer.instanceBufferView);
 	ShaderCompiler::GetPSO(dx12.currentPSO).Set(dx12);
 }
 

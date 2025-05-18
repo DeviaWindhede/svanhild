@@ -18,13 +18,25 @@ struct InstanceData
     uint modelIndex;
 };
 
-struct DrawIndirectArgs
+struct D3D12_DRAW_INDEXED_ARGUMENTS
 {
     uint IndexCountPerInstance;
     uint InstanceCount;
     uint StartIndexLocation;
-    uint BaseVertexLocation;
+    int BaseVertexLocation;
     uint StartInstanceLocation;
+};
+
+struct DrawIndirectArgsData
+{
+    uint StartInstanceOffset;
+    uint MeshIndex;
+};
+
+struct DrawIndirectArgs
+{
+    DrawIndirectArgsData data;
+    D3D12_DRAW_INDEXED_ARGUMENTS args;
 };
 
 struct InstanceCountData

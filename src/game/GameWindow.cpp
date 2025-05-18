@@ -64,7 +64,7 @@ void GameWindow::OnInit()
 			auto R = DirectX::XMMatrixRotationY(0);
 			auto T = DirectX::XMMatrixTranslation(offset, offset + i * 10.0f, offset * j + 10.0f);
 
-			instances.push_back({ S * R * T , meshes[1].mesh->Index() });
+			instances.push_back({ S * R * T , meshes[i].mesh->Index() });
 			totalInstances.push_back(instances.back());
 			meshes[i].instanceCount++;
 			if (i > 0)
@@ -82,12 +82,18 @@ void GameWindow::OnInit()
 		size_t startIndex = meshes[i].mesh->indeciesIndex;
 		
 		args.push_back(
-		{
-			.IndexCountPerInstance = static_cast<UINT>(meshes[i].mesh->IndexCount()),
-			.InstanceCount = meshes[i].instanceCount,
-			.StartIndexLocation =  static_cast<UINT>(startIndex),
-			.BaseVertexLocation = static_cast<UINT>(baseVertex),
-			.StartInstanceLocation = meshes[i].instanceOffset
+		DrawIndirectArgs {
+			.data = DrawIndirectArgsData {
+				.StartInstanceOffset = instanceOffsets[i],
+				.MeshIndex = static_cast<UINT>(i)
+			},
+			.drawArgs = D3D12_DRAW_INDEXED_ARGUMENTS {
+				.IndexCountPerInstance = static_cast<UINT>(meshes[i].mesh->IndexCount()),
+				.InstanceCount = meshes[i].instanceCount,
+				.StartIndexLocation =  static_cast<UINT>(startIndex),
+				.BaseVertexLocation = static_cast<INT>(baseVertex),
+				.StartInstanceLocation = meshes[i].instanceOffset
+			}
 		});
 	}
 	//meshes[1].buffer.Create(&dx12);

@@ -1,6 +1,14 @@
 #include "common.hlsli"
 
-PSInput main(VertexInputType Input)
+DrawIndirectArgsData DrawArgsData : register(b1);
+
+StructuredBuffer<InstanceData> instanceBuffer : register(t0, space0);
+StructuredBuffer<InstanceCountData> instanceCount : register(t1, space0);
+StructuredBuffer<uint> visibleInstanceIndices[FRAME_COUNT] : register(t2, space0);
+
+// TODO: BIND VISIBLE
+
+PSInput main(VertexInputType Input, uint instanceID : SV_InstanceID)
 {
     PSInput result;
     
@@ -11,10 +19,12 @@ PSInput main(VertexInputType Input)
     //    0, 0, 0, 1
     //);
     float4x4 transform = 0;
-    
-    transform._11_12_13_14 = Input.instanceTransform._11_12_13_41;
-    transform._21_22_23_24 = Input.instanceTransform._21_22_23_42;
-    transform._31_32_33_34 = Input.instanceTransform._31_32_33_43;
+
+    uint visibleInstanceIndex = instanceID + DrawArgsData.StartInstanceOffset;
+    uint index = visibleInstanceIndices[frameBuffer.g_frameIndex][visibleInstanceIndex];
+    transform._11_12_13_14 = instanceBuffer[index].instanceTransform._11_12_13_41;
+    transform._21_22_23_24 = instanceBuffer[index].instanceTransform._21_22_23_42;
+    transform._31_32_33_34 = instanceBuffer[index].instanceTransform._31_32_33_43;
     transform._44 = 1;
     
     // todo add object transform instanced data

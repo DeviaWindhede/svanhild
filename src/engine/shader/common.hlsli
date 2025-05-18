@@ -1,6 +1,6 @@
 #include "types.hlsli"
 
-#define MAX_BOUND_SRV_COUNT 8
+#define MAX_TEXTURE_COUNT 4096
 
 cbuffer SceneConstantBuffer : register(b0)
 {
