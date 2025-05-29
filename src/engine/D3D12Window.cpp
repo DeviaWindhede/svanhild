@@ -82,6 +82,12 @@ void D3D12Window::OnEndFrame()
 	editorWindow.EndFrame();
 	dx12.EndRender();
 
+	if (maxFrameRate > 0)
+	{
+		while (std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - _timer.GetLastTimePoint()).count() < (1.0 / static_cast<double>(maxFrameRate)))
+			continue;
+	}
+	
 	IWindow::OnEndFrame();
 }
 

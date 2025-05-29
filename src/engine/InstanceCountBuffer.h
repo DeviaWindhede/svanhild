@@ -1,8 +1,10 @@
 ﻿#pragma once
 #include "ResourceBuffer.h"
+#include "math/AABB.h"
 
 struct InstanceCountData
 {
+    AABB aabb;
     UINT instanceCount;
     UINT offset;
 };

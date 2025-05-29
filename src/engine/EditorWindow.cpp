@@ -10,12 +10,71 @@
 #include <imgui/backends/imgui_impl_win32.h>
 #include <InputManager.h>
 
+
+
+bool IsAABBVisible(DX12* dx12, DirectX::XMMATRIX transform, Vector3f minBounds, Vector3f maxBounds)
+{
+    DirectX::XMVECTOR aabbCorners[8] = {
+        DirectX::XMVECTOR{minBounds.x, minBounds.y, minBounds.z, 1.0f},
+        DirectX::XMVECTOR{maxBounds.x, minBounds.y, minBounds.z, 1.0f},
+        DirectX::XMVECTOR{minBounds.x, maxBounds.y, minBounds.z, 1.0f},
+        DirectX::XMVECTOR{maxBounds.x, maxBounds.y, minBounds.z, 1.0f},
+        DirectX::XMVECTOR{minBounds.x, minBounds.y, maxBounds.z, 1.0f},
+        DirectX::XMVECTOR{maxBounds.x, minBounds.y, maxBounds.z, 1.0f},
+        DirectX::XMVECTOR{minBounds.x, maxBounds.y, maxBounds.z, 1.0f},
+        DirectX::XMVECTOR{maxBounds.x, maxBounds.y, maxBounds.z, 1.0f}
+    };
+
+    for (int i = 0; i < 8; ++i)
+    {
+        auto vertexObjectPosition = DirectX::XMVector4Transform({
+            aabbCorners[i].m128_f32[0],
+            aabbCorners[i].m128_f32[1],
+            aabbCorners[i].m128_f32[2],
+            1
+        }, transform);
+        auto vertexViewPosition = DirectX::XMVector4Transform(vertexObjectPosition, dx12->frameBuffer.data->data.view);
+        auto vertexProjectionPosition = DirectX::XMVector4Transform(vertexViewPosition, dx12->frameBuffer.data->data.projection);
+        DirectX::XMVECTOR ndc = {
+            vertexProjectionPosition.m128_f32[0] / vertexProjectionPosition.m128_f32[3],
+            vertexProjectionPosition.m128_f32[1] / vertexProjectionPosition.m128_f32[3],
+            vertexProjectionPosition.m128_f32[2] / vertexProjectionPosition.m128_f32[3],
+            1.0f
+        };
+        bool isVisibleX = ndc.m128_f32[0] >= -1.0f && ndc.m128_f32[0] <= 1.0f;
+        bool isVisibleY = ndc.m128_f32[1] >= -1.0f && ndc.m128_f32[2] <= 1.0f;
+        bool isVisibleZ = ndc.m128_f32[2] >= 0 && ndc.m128_f32[2] <= 1.0f;
+
+        if (isVisibleX && isVisibleY && isVisibleZ)
+            return true;
+    }
+
+    return false;
+}
+
 void EditorWindow::Render()
 {
     ImGui::Begin("Data");
     ImGui::Text(
         ("FPS: " + std::to_string((int)(1.0f / window->GetTimer().GetDeltaTime())) + ", " + std::to_string(
             window->GetTimer().GetDeltaTime()) + "ms").c_str());
+
+
+    {
+        auto transform = dx12->instanceBuffer.cpuData[0].transform;
+
+        DirectX::XMMATRIX t = {
+            transform.data.f[0], transform.data.f[1], transform.data.f[2], 0,
+            transform.data.f[4], transform.data.f[5], transform.data.f[6], 0,
+            transform.data.f[8], transform.data.f[9], transform.data.f[10], 0,
+            transform.data.f[3], transform.data.f[7], transform.data.f[11], 1
+        };
+        
+        IsAABBVisible(dx12, t, dx12->instanceBuffer.instanceCountBuffer.cpuData[0].aabb.min, dx12->instanceBuffer.instanceCountBuffer.cpuData[0].aabb.max);
+    }
+
+
+    
     ImGui::End();
 }
 
@@ -125,7 +184,7 @@ void EditorWindow::Init(HWND hWnd, class DX12* aDx12, class IWindow* aWindow)
     ImGui_ImplDX12_InitInfo init_info = {};
     init_info.Device = dx12->myDevice.Get();
     init_info.CommandQueue = dx12->myCommandQueue.Get();
-    init_info.NumFramesInFlight = DX12::FrameCount;
+    init_info.NumFramesInFlight = RenderConstants::FrameCount;
     init_info.RTVFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
     init_info.DSVFormat = DXGI_FORMAT_UNKNOWN;
     // Allocating SRV descriptors (for textures) is up to the application, so we provide callbacks.

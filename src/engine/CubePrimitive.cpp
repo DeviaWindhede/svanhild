@@ -5,7 +5,7 @@
 
 void CubePrimitive::InitPrimitive()
 {
-	float size = 1.0f;
+	float size = 0.5f;
 	std::vector<Vertex> vertices{
         // front
         { { -size, -size, size },    { 0, 0, 1 }, { 1, 0 } },

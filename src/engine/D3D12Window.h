@@ -44,5 +44,7 @@ protected:
     Camera camera;
     ResourceLoader resourceLoader;
 
+    int maxFrameRate = 0;
+    
     void UpdateFrameBuffer();
 };

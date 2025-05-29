@@ -41,23 +41,36 @@ struct InstanceData
 	UINT modelIndex;
 };
 
+// Plane equation: dot(n, P) + d = 0
+struct FrustumPlane {
+	DirectX::XMFLOAT3 normal;
+	float d;
+};
+
+struct alignas(4) FrameBufferViewport
+{
+	DirectX::XMFLOAT2 bounds{};
+	float nearPlane = 0;
+	float farPlane	= 0;
+};
+
 struct FrameBufferData
 {
     DirectX::XMMATRIX view{};
     DirectX::XMMATRIX projection{};
-	DirectX::XMFLOAT2 viewport{};
-    float nearPlane = 0;
-    float farPlane	= 0;
+	FrameBufferViewport viewport{};
     float time		= 0;
 	UINT renderPass = 0;
 	UINT frameIndex = 0;
+	float padding	= 0;
+	FrustumPlane frustumPlanes[6]{};
 };
 static_assert((sizeof(FrameBufferData) % 4) == 0, "must be 4-byte aligned");
 
 struct FrameBufferConstantData
 {
 	FrameBufferData data;
-	float padding[(256 - sizeof(FrameBufferData)) / 4]; // Padding so the constant buffer is 256-byte aligned.
+	//float padding[(256 - sizeof(FrameBufferData)) / 4]; // Padding so the constant buffer is 256-byte aligned.
 };
 
 static_assert((sizeof(FrameBufferConstantData) % 256) == 0, "Constant Buffer size must be 256-byte aligned");

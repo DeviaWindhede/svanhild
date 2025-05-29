@@ -119,6 +119,10 @@ size_t InstanceBuffer::AddItem(ComPtr<ID3D12Device>& aDevice, InstanceData* aDat
 	// TEMP
 	{
 		InstanceCountData data;
+		data.aabb = {
+			.min= {-0.5, -0.5, -0.5 },
+			.max= {0.5, 0.5, 0.5 }
+		};
 		data.offset = prevSize;
 		data.instanceCount = aSize;
 		instanceCountBuffer.AddItem(aDevice, &data);

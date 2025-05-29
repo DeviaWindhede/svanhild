@@ -801,7 +801,7 @@ void DX12::ExecuteRender()
 
 void DX12::EndRender()
 {
-    HRESULT hr = mySwapChain->Present((UINT)useVSync, DXGI_PRESENT_ALLOW_TEARING);
+    HRESULT hr = mySwapChain->Present(static_cast<UINT>(useVSync), static_cast<UINT>(!useVSync) * DXGI_PRESENT_ALLOW_TEARING);
     ThrowIfFailed(hr);
     swapChainOccluded = hr == DXGI_STATUS_OCCLUDED;
 

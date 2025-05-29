@@ -33,7 +33,49 @@ RWStructuredBuffer<uint> visibleInstanceIndices0 : register(u1, space1);
 RWStructuredBuffer<DrawIndirectArgs> outputCommands1 : register(u2, space1);
 RWStructuredBuffer<uint> visibleInstanceIndices1 : register(u3, space1);
 
+bool IsAABBVisible(float4x4 transform, float3 minBounds, float3 maxBounds)
+{
+    float3 aabbCorners[8] = {
+        float3(minBounds.x, minBounds.y, minBounds.z),
+        float3(maxBounds.x, minBounds.y, minBounds.z),
+        float3(minBounds.x, maxBounds.y, minBounds.z),
+        float3(maxBounds.x, maxBounds.y, minBounds.z),
+        float3(minBounds.x, minBounds.y, maxBounds.z),
+        float3(maxBounds.x, minBounds.y, maxBounds.z),
+        float3(minBounds.x, maxBounds.y, maxBounds.z),
+        float3(maxBounds.x, maxBounds.y, maxBounds.z)
+    };
+
+    for (int i = 0; i < 8; ++i)
+    {
+        float4 vertexObjectPosition = mul(transform, float4(aabbCorners[i].xyz, 1.0f));
+        float4 vertexViewPosition = mul(frameBuffer.g_view, vertexObjectPosition);
+        float4 vertexProjectionPosition = mul(frameBuffer.g_projection, vertexViewPosition);
+
+        if (vertexProjectionPosition.w < 0.05f)
+            continue;
+        
+        float3 ndc = float3(
+            vertexProjectionPosition.x / vertexProjectionPosition.w,
+            vertexProjectionPosition.y / vertexProjectionPosition.w,
+            vertexProjectionPosition.z / vertexProjectionPosition.w
+        );
+
+        bool isVisibleX = ndc.x >= -1.0f && ndc.x <= 1.0f;
+        bool isVisibleY = ndc.y >= -1.0f && ndc.y <= 1.0f;
+        bool isVisibleZ = ndc.z >= 0 && ndc.z <= 1.0f;
+        isVisibleZ = true;
+
+        if (isVisibleX && isVisibleY && isVisibleZ)
+            return true;
+    }
+
+    return false;
+}
+
 #define threadBlockSize 64
+
+// TODO: Occlusion culling based on previous frames depth buffer
 
 [numthreads(threadBlockSize, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3 Gid : SV_GroupID)
@@ -45,8 +87,6 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3
     
     uint commandIndex = 0;
     {
-        uint accumulatedInstances = 0;
-
         for (uint i = 1; i < CommandLength; i++)
         {
             if (instanceIndex < instanceCount[i].offset)
@@ -56,13 +96,26 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3
             }
         }
 
-        uint localInstanceIndex = instanceIndex - instanceCount[commandIndex].offset;
+        bool cullingEnabled = true;
+        if (cullingEnabled)
+        {
+            uint localInstanceIndex = instanceIndex - instanceCount[commandIndex].offset;
 
-        bool isVisible = true;
-        // isVisible = instances[instanceIndex].instanceTransform._31_32_33_43.w < 50;
-        // isVisible = localInstanceIndex % 2 == 1;
-        if (!isVisible)
-            return;
+            float4x4 transform = 0;
+            transform._11_12_13_14 = instances[instanceIndex].instanceTransform._11_12_13_41;
+            transform._21_22_23_24 = instances[instanceIndex].instanceTransform._21_22_23_42;
+            transform._31_32_33_34 = instances[instanceIndex].instanceTransform._31_32_33_43;
+            transform._44 = 1;
+
+            bool isVisible = IsAABBVisible(transform, instanceCount[commandIndex].bounds.min, instanceCount[commandIndex].bounds.max);
+            // isVisible = instances[instanceIndex].instanceTransform._31_32_33_43.w < 50;
+            //isVisible = localInstanceIndex % 5 == 1;
+            //isVisible = IsAABBVisible(min, max);
+            
+            if (!isVisible)
+                return;
+        }
+
     }
     
     uint previousValue = 0;
@@ -76,7 +129,7 @@ void main(uint3 DTid : SV_DispatchThreadID, uint3 GTid : SV_GroupThreadID, uint3
     else
     {
         InterlockedAdd(outputCommands1[commandIndex].args.InstanceCount, 1, previousValue);
-        previousValue += outputCommands0[commandIndex].args.StartInstanceLocation;
+        previousValue += outputCommands1[commandIndex].args.StartInstanceLocation;
         visibleInstanceIndices1[previousValue] = instanceIndex;
     }
 }

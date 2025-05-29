@@ -32,12 +32,11 @@ PSInput main(VertexInputType Input, uint instanceID : SV_InstanceID)
     float4 vertexViewPosition = mul(frameBuffer.g_view, vertexObjectPosition);
     float4 vertexProjectionPosition = mul(frameBuffer.g_projection, vertexViewPosition);
     
-    
     result.position = vertexProjectionPosition;
     result.uv = Input.uv;
-    result.color = float4(Input.color.rgb, 1);
     result.temp = frameBuffer.g_renderPass;
     result.time = frameBuffer.g_time;
+    result.color = float4(Input.color.rgb, 1);
     
     return result;
 }

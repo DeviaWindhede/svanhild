@@ -149,7 +149,22 @@ void Mesh::LoadMeshData(const std::vector<Vertex>& aVertices, const std::vector<
 	indices = new UINT16[indexCount];
 	memcpy(vertices, aVertices.data(), vertexCount * sizeof(Vertex));
 	memcpy(indices, aIndices.data(), indexCount * sizeof(UINT16));
-
+	
+	for (UINT i = 0; i < aVertices.size(); i++)
+	{
+		if (aVertices[i].position.x > bounds.max.x)
+			bounds.max.x = aVertices[i].position.x;
+		if (aVertices[i].position.y > bounds.max.y)
+			bounds.max.y = aVertices[i].position.y;
+		if (aVertices[i].position.z > bounds.max.z)
+			bounds.max.z = aVertices[i].position.z;
+		if (aVertices[i].position.x < bounds.min.x)
+			bounds.min.x = aVertices[i].position.x;
+		if (aVertices[i].position.y < bounds.min.y)
+			bounds.min.y = aVertices[i].position.y;
+		if (aVertices[i].position.z < bounds.min.z)
+			bounds.min.z = aVertices[i].position.z;
+	}
 	//size_t totalSize = sizeof(Vertex) * vertexCount + sizeof(UINT) * indexCount;
 	//data = new unsigned char[totalSize]; // TODO: Custom allocator for all asset content
 

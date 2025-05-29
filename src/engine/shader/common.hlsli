@@ -5,7 +5,7 @@
 cbuffer SceneConstantBuffer : register(b0)
 {
     FrameBufferData frameBuffer;
-    float g_padding[23]; // Padding so the constant buffer is 256-byte aligned.
+    //float g_padding[1]; // Padding so the constant buffer is 256-byte aligned.
 };
 
 struct VertexInputType

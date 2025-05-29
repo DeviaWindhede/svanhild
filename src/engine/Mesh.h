@@ -1,6 +1,7 @@
 #pragma once
 #include "UploadBuffer.h"
 #include "IResource.h"
+#include "math/AABB.h"
 
 class Mesh : public IResource
 {
@@ -26,6 +27,7 @@ public:
 
 	size_t verticesIndex = 0;
 	size_t indeciesIndex = 0;
+	AABB bounds;
 private:
 	void Internal_UnloadCPU();
 	void PerformResourceBarrier(ComPtr<ID3D12GraphicsCommandList>& aCommandList, D3D12_RESOURCE_STATES aPrevious, D3D12_RESOURCE_STATES aNewState) const;

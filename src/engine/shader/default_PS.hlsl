@@ -35,7 +35,8 @@ float4 main(PSInput input) : SV_TARGET
     //         break;
     // }
     //
-    return float4(1, input.temp, 1, 1);
+    return float4(input.color.rgb, 1);
+    // return float4(1, input.temp, 1, 1);
     //return g_texture[input.temp].Sample(g_sampler, input.uv);
     //return input.color;
 

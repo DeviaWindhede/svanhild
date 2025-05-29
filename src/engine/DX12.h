@@ -149,7 +149,7 @@ public:
     UINT64 myFenceValues[RenderConstants::FrameCount];
     UINT64 myComputeFenceValues[RenderConstants::FrameCount];
     bool swapChainOccluded = false;
-    bool useVSync = false;
+    bool useVSync = true;
 private:
     bool useWarpDevice;
 };
