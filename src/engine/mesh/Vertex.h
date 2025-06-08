@@ -1,6 +1,4 @@
 #pragma once
-#include "MathDefines.h"
-#include <vector>
 
 struct Vertex
 {

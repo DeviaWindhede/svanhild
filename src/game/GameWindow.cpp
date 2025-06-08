@@ -1,14 +1,11 @@
 #include "pch.h"
 #include "GameWindow.h"
-#include "DX12.h"
-#include <InputManager.h>
-#include "CubePrimitive.h"
-#include "SpherePrimitive.h"
-#include "ShaderCompiler.h"
-#include <mesh/ModelFactory.h>
-#include <StringHelper.h>
 #include <iostream>
-#include "StringHelper.h"
+
+#include "input/InputManager.h"
+#include "mesh/primitive/CubePrimitive.h"
+#include "mesh/primitive/SpherePrimitive.h"
+#include "rendering/Texture.h"
 
 GameWindow::GameWindow(UINT width, UINT height, std::wstring name) : D3D12Window(width, height, name)
 {
@@ -54,8 +51,8 @@ void GameWindow::OnInit()
 	size_t amount = 180;
 	for (int i = 0; i < meshes.size(); i++)
 	{
-		instanceOffsets.push_back(totalInstances.size());
-		meshes[i].instanceOffset = totalInstances.size();
+		instanceOffsets.push_back(static_cast<UINT>(totalInstances.size()));
+		meshes[i].instanceOffset = static_cast<UINT>(totalInstances.size());
 		
 		std::vector<InstanceData> instances;
 		for (int j = 0; j < amount; j++)
@@ -70,7 +67,7 @@ void GameWindow::OnInit()
 			if (i > 0)
 			{
 				meshes[i].mesh->verticesIndex = meshes[i - 1].mesh->verticesIndex + meshes[i - 1].mesh->VertexCount();
-				meshes[i].mesh->indeciesIndex = meshes[i - 1].mesh->indeciesIndex + meshes[i - 1].mesh->IndexCount();
+				meshes[i].mesh->indicesIndex = meshes[i - 1].mesh->indicesIndex + meshes[i - 1].mesh->IndexCount();
 			}
 		}
 		dx12.instanceBuffer.AddItem(dx12.myDevice, instances.data(), instances.size());
@@ -79,7 +76,7 @@ void GameWindow::OnInit()
 	for (size_t i = 0; i < instanceOffsets.size(); i++)
 	{
 		size_t baseVertex = meshes[i].mesh->verticesIndex;
-		size_t startIndex = meshes[i].mesh->indeciesIndex;
+		size_t startIndex = meshes[i].mesh->indicesIndex;
 		
 		args.push_back(
 		DrawIndirectArgs {

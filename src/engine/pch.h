@@ -47,6 +47,6 @@
 #include <stddef.h>
 #include <math.h>
 #include <cmath>
-#include "MathDefines.h"
-#include "ClassHelper.h"
+#include "math/MathDefines.h"
+#include "util/ClassHelper.h"
 

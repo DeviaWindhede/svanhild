@@ -1,15 +1,9 @@
 #pragma once
-#include <D3D12Window.h>
-#include "Mesh.h"
-#include "CubePrimitive.h"
-#include "Texture.h"
-#include "InstanceBuffer.h"
-#include <vector>
-#include <array>
+#include "rendering/d3dx/d3d12/D3D12Window.h"
 
 struct TempMeshCollection
 {
-	Mesh* mesh;
+	class Mesh* mesh;
 	UINT instanceOffset;
 	UINT instanceCount;
 };
@@ -27,6 +21,6 @@ public:
 private:
 	std::vector<InstanceData> totalInstances;
 	std::vector<TempMeshCollection> meshes;
-	std::vector<Texture*> textures;
+	std::vector<class Texture*> textures;
 };
 
