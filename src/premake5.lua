@@ -13,6 +13,5 @@ workspace "svanhild"
 	}
 
 	include (dirs.include)
-	include (dirs.ecs)
 	include (dirs.engine)
 	include (dirs.game)

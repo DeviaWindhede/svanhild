@@ -1,4 +1,6 @@
 #pragma once
+#include <entt/entt.hpp>
+
 #include "rendering/d3dx/d3d12/D3D12Window.h"
 
 struct TempMeshCollection
@@ -19,6 +21,8 @@ public:
 	virtual void OnRender() override;
 
 private:
+    entt::registry registry;
+	
 	std::vector<InstanceData> totalInstances;
 	std::vector<TempMeshCollection> meshes;
 	std::vector<class Texture*> textures;
