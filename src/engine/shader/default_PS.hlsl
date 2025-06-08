@@ -1,6 +1,6 @@
 #include "common.hlsli"
 
-//Texture2D g_texture[MAX_TEXTURE_COUNT] : register(t0, space1);
+Texture2D g_texture[MAX_TEXTURE_COUNT] : register(t0, space1);
 SamplerState g_sampler : register(s0);
 
 float4 main(PSInput input) : SV_TARGET
@@ -35,9 +35,9 @@ float4 main(PSInput input) : SV_TARGET
     //         break;
     // }
     //
-    return float4(input.color.rgb, 1);
+
     // return float4(1, input.temp, 1, 1);
-    //return g_texture[input.temp].Sample(g_sampler, input.uv);
+    return g_texture[input.textureIndex].Sample(g_sampler, input.uv);
     //return input.color;
 
 }

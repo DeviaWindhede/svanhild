@@ -28,6 +28,5 @@ private:
 	std::vector<InstanceData> totalInstances;
 	std::vector<TempMeshCollection> meshes;
 	std::vector<Texture*> textures;
-	std::array<UINT, 8> boundTextures{ UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX, UINT_MAX };
 };
 

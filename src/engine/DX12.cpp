@@ -310,32 +310,47 @@ void DX12::LoadPipeline()
 
             myGraphicsCbvSrvUavHeap.Init(
                 myDevice.Get(),
-                MAX_GRAPHICS_STATIC_CBV_COUNT,
-                MAX_GRAPHICS_STATIC_SRV_COUNT,
-                MAX_GRAPHICS_STATIC_UAV_COUNT,
-                MAX_GRAPHICS_PER_FRAME_CBV_COUNT,
-                MAX_GRAPHICS_PER_FRAME_SRV_COUNT,
-                MAX_GRAPHICS_PER_FRAME_UAV_COUNT
+                {
+                    {
+                        MAX_GRAPHICS_STATIC_CBV_COUNT,
+                        MAX_GRAPHICS_STATIC_SRV_COUNT,
+                        MAX_GRAPHICS_STATIC_UAV_COUNT,
+                        MAX_GRAPHICS_PER_FRAME_CBV_COUNT,
+                        MAX_GRAPHICS_PER_FRAME_SRV_COUNT,
+                        MAX_GRAPHICS_PER_FRAME_UAV_COUNT
+                    },
+                    {
+                        0,
+                        MAX_TEXTURE_COUNT,
+                        0,
+                        0,
+                        0,
+                        0
+                    }
+                }
             );
             myGraphicsCbvSrvUavHeap.GetHeap()->SetName(L"CBV_SRV_UAV_HEAP");
-            myTextureHeap.Init(
-                myDevice.Get(),
-                0,
-                MAX_TEXTURE_COUNT,
-                0,
-                0,
-                0,
-                0
-            );
 
             myComputeCbvSrvUavHeap.Init(
                 myDevice.Get(),
-                MAX_COMPUTE_STATIC_CBV_COUNT,
-                MAX_COMPUTE_STATIC_SRV_COUNT,
-                MAX_COMPUTE_STATIC_UAV_COUNT,
-                MAX_COMPUTE_PER_FRAME_CBV_COUNT,
-                MAX_COMPUTE_PER_FRAME_SRV_COUNT,
-                MAX_COMPUTE_PER_FRAME_UAV_COUNT
+                {
+                    {
+                        MAX_GRAPHICS_STATIC_CBV_COUNT,
+                        MAX_GRAPHICS_STATIC_SRV_COUNT,
+                        0,
+                        0,
+                        0,
+                        0
+                    },
+                    {
+                        0,
+                        0,
+                        0,
+                        MAX_COMPUTE_PER_FRAME_CBV_COUNT,
+                        MAX_COMPUTE_PER_FRAME_SRV_COUNT,
+                        MAX_COMPUTE_PER_FRAME_UAV_COUNT
+                    }
+                }
             );
             myComputeCbvSrvUavHeap.GetHeap()->SetName(L"COMPUTE_CBV_SRV_UAV_HEAP");
         }
@@ -383,18 +398,19 @@ void DX12::LoadPipeline()
         CD3DX12_ROOT_PARAMETER1 rootParameters[static_cast<UINT>(GraphicsRootParameters::Count)];
         {
             CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
-            ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_GRAPHICS_STATIC_SRV_COUNT + MAX_GRAPHICS_PER_FRAME_SRV_COUNT * RenderConstants::FrameCount, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+            ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_GRAPHICS_STATIC_SRV_COUNT, 0, static_cast<UINT>(GraphicsHeapSpaces::Generic), D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
             rootParameters[static_cast<UINT>(GraphicsRootParameters::CbvSrvUav)].InitAsDescriptorTable(_countof(ranges), ranges, D3D12_SHADER_VISIBILITY_ALL);
         }
         {
-            rootParameters[static_cast<UINT>(GraphicsRootParameters::FrameBuffer)].InitAsConstantBufferView(0, 0, D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_ALL);
+            CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
+            ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_GRAPHICS_PER_FRAME_SRV_COUNT, MAX_GRAPHICS_STATIC_SRV_COUNT, static_cast<UINT>(GraphicsHeapSpaces::Generic), D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE);
+            rootParameters[static_cast<UINT>(GraphicsRootParameters::PerFrameCbvSrvUav)].InitAsDescriptorTable(_countof(ranges), ranges, D3D12_SHADER_VISIBILITY_ALL);
         }
-        {
-            rootParameters[static_cast<UINT>(GraphicsRootParameters::RenderConstants)].InitAsConstants(sizeof(DrawIndirectArgsData) / sizeof(float), 1, 0, D3D12_SHADER_VISIBILITY_VERTEX);
-        }
+            rootParameters[static_cast<UINT>(GraphicsRootParameters::FrameBuffer)].InitAsConstantBufferView(0, static_cast<UINT>(GraphicsHeapSpaces::Generic), D3D12_ROOT_DESCRIPTOR_FLAG_DATA_STATIC, D3D12_SHADER_VISIBILITY_ALL);
+            rootParameters[static_cast<UINT>(GraphicsRootParameters::RenderConstants)].InitAsConstants(sizeof(DrawIndirectArgsData) / sizeof(float), 1, static_cast<UINT>(GraphicsHeapSpaces::Generic), D3D12_SHADER_VISIBILITY_ALL);
         {
             CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
-            ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_TEXTURE_COUNT, 0, 1, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
+            ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_TEXTURE_COUNT, 0, static_cast<UINT>(GraphicsHeapSpaces::Textures), D3D12_DESCRIPTOR_RANGE_FLAG_DATA_STATIC);
             rootParameters[static_cast<UINT>(GraphicsRootParameters::Textures)].InitAsDescriptorTable(_countof(ranges), ranges, D3D12_SHADER_VISIBILITY_PIXEL);
         }
         
@@ -444,16 +460,24 @@ void DX12::LoadPipeline()
 
         {
             CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
-            ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_COMPUTE_STATIC_SRV_COUNT, 0, 0, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE); // instance buffer and instance count buffer
+            ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_SRV, MAX_COMPUTE_STATIC_SRV_COUNT, 0, static_cast<UINT>(ComputeHeapSpaces::Generic), D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE); // instance buffer and instance count buffer
             rootParameters[static_cast<UINT>(ComputeRootParameters::CbvSrvUavTable)].InitAsDescriptorTable(_countof(ranges), ranges);
         }
         {
             CD3DX12_DESCRIPTOR_RANGE1 ranges[1];
-            ranges[0].Init(D3D12_DESCRIPTOR_RANGE_TYPE_UAV, MAX_COMPUTE_PER_FRAME_UAV_COUNT * RenderConstants::FrameCount, 0, 1, D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE); // output commands buffer array
+            ranges[0].Init(
+                D3D12_DESCRIPTOR_RANGE_TYPE_UAV,
+                MAX_COMPUTE_PER_FRAME_UAV_COUNT,
+                0,
+                static_cast<UINT>(ComputeHeapSpaces::ComputeData),
+                D3D12_DESCRIPTOR_RANGE_FLAG_DATA_VOLATILE,
+                D3D12_DESCRIPTOR_RANGE_OFFSET_APPEND
+            ); // output commands buffer array
+            
             rootParameters[static_cast<UINT>(ComputeRootParameters::PerFrameCbvSrvUavTable)].InitAsDescriptorTable(_countof(ranges), ranges);
         }
-        rootParameters[static_cast<UINT>(ComputeRootParameters::FrameBuffer)].InitAsConstantBufferView(0, 0);
-        rootParameters[static_cast<UINT>(ComputeRootParameters::RootConstants)].InitAsConstants(sizeof(RootConstants) / sizeof(float), 0, 1);
+        rootParameters[static_cast<UINT>(ComputeRootParameters::FrameBuffer)].InitAsConstantBufferView(0, static_cast<UINT>(ComputeHeapSpaces::Generic));
+        rootParameters[static_cast<UINT>(ComputeRootParameters::RootConstants)].InitAsConstants(sizeof(RootConstants) / sizeof(float), 0, static_cast<UINT>(ComputeHeapSpaces::ComputeData));
         
         CD3DX12_VERSIONED_ROOT_SIGNATURE_DESC rootSignatureDesc;
         rootSignatureDesc.Init_1_1(_countof(rootParameters), rootParameters, 0, nullptr,
@@ -717,8 +741,8 @@ void DX12::PrepareRender()
 
             ID3D12DescriptorHeap* descriptorHeaps[] = { myComputeCbvSrvUavHeap.GetHeap() };
             myComputeCommandList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-            myComputeCommandList->SetComputeRootDescriptorTable(static_cast<UINT>(ComputeRootParameters::CbvSrvUavTable), myComputeCbvSrvUavHeap.GetGPUHandle()); 
-            myComputeCommandList->SetComputeRootDescriptorTable(static_cast<UINT>(ComputeRootParameters::PerFrameCbvSrvUavTable), myComputeCbvSrvUavHeap.GetPerFrameGPUHandle(0, 0)); 
+            myComputeCommandList->SetComputeRootDescriptorTable(static_cast<UINT>(ComputeRootParameters::CbvSrvUavTable), myComputeCbvSrvUavHeap.GetStaticGPUHandleStart());
+            myComputeCommandList->SetComputeRootDescriptorTable(static_cast<UINT>(ComputeRootParameters::PerFrameCbvSrvUavTable), myComputeCbvSrvUavHeap.GetPerFrameGPUHandleStart(myFrameIndex));
             myComputeCommandList->SetComputeRootConstantBufferView(static_cast<UINT>(ComputeRootParameters::FrameBuffer), frameBuffer.resource->GetGPUVirtualAddress());
 
             meshRenderer.Dispatch();
@@ -737,7 +761,9 @@ void DX12::PrepareRender()
         ID3D12DescriptorHeap* ppHeaps[] = {myGraphicsCbvSrvUavHeap.GetHeap()};
         myCommandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
 
-        myCommandList->SetGraphicsRootDescriptorTable(static_cast<UINT>(GraphicsRootParameters::CbvSrvUav), myGraphicsCbvSrvUavHeap.GetGPUHandle());
+        myCommandList->SetGraphicsRootDescriptorTable(static_cast<UINT>(GraphicsRootParameters::CbvSrvUav), myGraphicsCbvSrvUavHeap.GetStaticGPUHandleStart());
+        myCommandList->SetGraphicsRootDescriptorTable(static_cast<UINT>(GraphicsRootParameters::PerFrameCbvSrvUav), myGraphicsCbvSrvUavHeap.GetPerFrameGPUHandleStart(myFrameIndex));
+        myCommandList->SetGraphicsRootDescriptorTable(static_cast<UINT>(GraphicsRootParameters::Textures), myGraphicsCbvSrvUavHeap.GetStaticGPUHandle(0, 1));
         myCommandList->SetGraphicsRootConstantBufferView(static_cast<UINT>(GraphicsRootParameters::FrameBuffer), frameBuffer.resource->GetGPUVirtualAddress());
 
         myCommandList->RSSetViewports(1, &myViewport);

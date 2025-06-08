@@ -63,12 +63,18 @@ void OutputCommandBuffer::CreateResourceViews()
 	if (gpuSize == 0)
 		return;
 
-	uavArgsHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(dx12->myComputeCbvSrvUavHeap.GetPerFrameCPUHandle(indexOffset, static_cast<UINT>(ComputeUavDynamicOffsets::CommandOutput)));
+	uavArgsHandle = CD3DX12_CPU_DESCRIPTOR_HANDLE(
+		dx12->myComputeCbvSrvUavHeap.GetPerFrameCPUHandle(
+			indexOffset,
+		static_cast<UINT>(ComputeUavDynamicOffsets::CommandOutput),
+		static_cast<UINT>(ComputeHeapSpaces::Generic)
+		)
+	);
 
 	D3D12_UNORDERED_ACCESS_VIEW_DESC uavArgsDesc = {};
 	uavArgsDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 	uavArgsDesc.Buffer.FirstElement = 0;
-	uavArgsDesc.Buffer.NumElements = gpuSize;
+	uavArgsDesc.Buffer.NumElements = static_cast<UINT>(gpuSize);
 	uavArgsDesc.Buffer.StructureByteStride = sizeof(DrawIndirectArgs);
 	uavArgsDesc.Buffer.CounterOffsetInBytes = 0;
 	uavArgsDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;

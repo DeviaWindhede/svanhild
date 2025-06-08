@@ -13,6 +13,7 @@ using Microsoft::WRL::ComPtr;
 enum class GraphicsRootParameters
 {
     CbvSrvUav,
+    PerFrameCbvSrvUav,
     FrameBuffer,
     RenderConstants,
     Textures,
@@ -24,6 +25,12 @@ enum class GraphicsSrvStaticOffsets
     InstanceBuffer,
     InstanceCount,
     Count
+};
+
+enum class GraphicsHeapSpaces
+{
+    Generic,
+    Textures
 };
 
 enum class GraphicsSrvDynamicOffsets
@@ -44,6 +51,12 @@ enum class ComputeUavDynamicOffsets
     CommandOutput,
     VisibleInstanceIndices,
     Count
+};
+
+enum class ComputeHeapSpaces
+{
+    Generic,
+    ComputeData
 };
 
 
@@ -90,7 +103,7 @@ public:
     static constexpr UINT CBV_SRV_UAV_SIZE = CBV_SIZE + SRV_SIZE + UAV_SIZE; //* FrameCount; // 2srv + 1uav
 
 
-    static constexpr UINT MAX_TEXTURE_COUNT = 4096;
+    static constexpr UINT MAX_TEXTURE_COUNT = 4096;//4096;
     // static constexpr UINT COMPUTE_CBV_SIZE = 0; // TODO: Change to 2 here
     // static constexpr UINT COMPUTE_SRV_SIZE = static_cast<UINT>(SrvOffsets::Count);
     // static constexpr UINT COMPUTE_UAV_SIZE = RenderConstants::FrameCount * static_cast<UINT>(ComputeUavOffsets::Count);
@@ -121,7 +134,6 @@ public:
     
     BindlessDescriptorHeap myComputeCbvSrvUavHeap;
     BindlessDescriptorHeap myGraphicsCbvSrvUavHeap;
-    BindlessDescriptorHeap myTextureHeap;
     
     ComPtr<ID3D12GraphicsCommandList> myCommandList;
     ComPtr<ID3D12GraphicsCommandList> myComputeCommandList;
@@ -149,7 +161,7 @@ public:
     UINT64 myFenceValues[RenderConstants::FrameCount];
     UINT64 myComputeFenceValues[RenderConstants::FrameCount];
     bool swapChainOccluded = false;
-    bool useVSync = true;
+    bool useVSync = false;
 private:
     bool useWarpDevice;
 };

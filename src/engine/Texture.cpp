@@ -77,7 +77,9 @@ void Texture::LoadToGPU(DX12* aDx12, ResourceBuffers*)
 		
 		// descriptorHandle = aDx12->myTextureHeap.GetNewHeapHandle();
 
-		aDx12->myDevice->CreateShaderResourceView(resource.Get(), &srvDesc, aDx12->myTextureHeap.GetCPUHandle());
+		aDx12->myDevice->CreateShaderResourceView(resource.Get(), &srvDesc, aDx12->myGraphicsCbvSrvUavHeap.GetStaticCPUHandle(
+			0, static_cast<UINT>(GraphicsHeapSpaces::Textures))
+		);
 	}
 }
 

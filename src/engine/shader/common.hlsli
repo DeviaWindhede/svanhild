@@ -24,6 +24,7 @@ struct PSInput
     float4 position : SV_POSITION;
     float2 uv : TEXCOORD;
     float4 color : COLOR;
-    uint temp : WHATEVER;
+    uint renderPass : RENDER_PASS; // TODO: REMOVE THIS AND USE A PROPER SHADER INSTEAD
+    uint textureIndex : INDEX;
     float time : TIME;
 };

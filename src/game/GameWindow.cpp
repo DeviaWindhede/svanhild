@@ -265,18 +265,6 @@ void GameWindow::OnRender()
 		}
 	}
 #endif
-	if (textures.size() > 0 && textures[0]->GPUInitialized())
-	{
-		for (UINT i = 0; i < textures.size(); ++i) {
-			if (boundTextures[i] == textures[i]->Index())
-				continue;
-
-			if (!textures[i]->Bind(i, &dx12))
-				continue;
-
-			boundTextures[i] = textures[i]->Index();
-		}
-	}
 	
 	if (meshes.size() == 0)
 		return;

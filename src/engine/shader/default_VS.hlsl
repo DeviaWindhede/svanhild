@@ -4,7 +4,7 @@ DrawIndirectArgsData DrawArgsData : register(b1);
 
 StructuredBuffer<InstanceData> instanceBuffer : register(t0, space0);
 StructuredBuffer<InstanceCountData> instanceCount : register(t1, space0);
-StructuredBuffer<uint> visibleInstanceIndices[FRAME_COUNT] : register(t2, space0);
+StructuredBuffer<uint> visibleInstanceIndices: register(t2, space0);
 
 // TODO: BIND VISIBLE
 
@@ -21,7 +21,7 @@ PSInput main(VertexInputType Input, uint instanceID : SV_InstanceID)
     float4x4 transform = 0;
 
     uint visibleInstanceIndex = instanceID + DrawArgsData.StartInstanceOffset;
-    uint index = visibleInstanceIndices[frameBuffer.g_frameIndex][visibleInstanceIndex];
+    uint index = visibleInstanceIndices[visibleInstanceIndex];
     transform._11_12_13_14 = instanceBuffer[index].instanceTransform._11_12_13_41;
     transform._21_22_23_24 = instanceBuffer[index].instanceTransform._21_22_23_42;
     transform._31_32_33_34 = instanceBuffer[index].instanceTransform._31_32_33_43;
@@ -34,7 +34,8 @@ PSInput main(VertexInputType Input, uint instanceID : SV_InstanceID)
     
     result.position = vertexProjectionPosition;
     result.uv = Input.uv;
-    result.temp = frameBuffer.g_renderPass;
+    result.renderPass = frameBuffer.g_renderPass;
+    result.textureIndex = 0;//DrawArgsData.MeshIndex;
     result.time = frameBuffer.g_time;
     result.color = float4(Input.color.rgb, 1);
     

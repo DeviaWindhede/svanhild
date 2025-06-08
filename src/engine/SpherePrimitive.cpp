@@ -6,7 +6,7 @@ void SpherePrimitive::InitPrimitive(int aResolution)
     std::vector<Vertex> vertices;
     std::vector<UINT16> indices;
 
-    float radius = 1;
+    float radius = 0.5f;
 
     for (int y = 0; y <= aResolution; ++y) {
         for (int x = 0; x <= aResolution; ++x) {

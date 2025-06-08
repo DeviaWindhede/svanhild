@@ -22,7 +22,7 @@ void InstanceBuffer::Create(ComPtr<ID3D12Device>& aDevice, size_t aSize)
 	ResourceBuffer<InstanceData>::Create(aDevice, aSize, CD3DX12_RESOURCE_DESC::Buffer(aSize * sizeof(InstanceData)), L"InstanceBuffer");
 
 	{
-		CD3DX12_CPU_DESCRIPTOR_HANDLE handle(dx12->myGraphicsCbvSrvUavHeap.GetStaticCPUHandle(static_cast<UINT>(GraphicsSrvStaticOffsets::InstanceBuffer)));
+		CD3DX12_CPU_DESCRIPTOR_HANDLE handle(dx12->myGraphicsCbvSrvUavHeap.GetStaticCPUHandle(static_cast<UINT>(GraphicsSrvStaticOffsets::InstanceBuffer), static_cast<UINT>(GraphicsHeapSpaces::Generic)));
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -41,7 +41,7 @@ void InstanceBuffer::Create(ComPtr<ID3D12Device>& aDevice, size_t aSize)
 		instanceBufferView.SizeInBytes = instanceBufferView.StrideInBytes * srvDesc.Buffer.NumElements;
 	}
 	{
-		CD3DX12_CPU_DESCRIPTOR_HANDLE handle(dx12->myComputeCbvSrvUavHeap.GetStaticCPUHandle(static_cast<UINT>(ComputeSrvStaticOffsets::InstanceBuffer)));
+		CD3DX12_CPU_DESCRIPTOR_HANDLE handle(dx12->myComputeCbvSrvUavHeap.GetStaticCPUHandle(static_cast<UINT>(ComputeSrvStaticOffsets::InstanceBuffer), static_cast<UINT>(GraphicsHeapSpaces::Generic)));
 
 		D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 		srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
@@ -67,7 +67,7 @@ void InstanceBuffer::Update(ComPtr<ID3D12GraphicsCommandList>& aCommandList)
 		if (visibleInstancesBuffer[i].wasDirty && visibleInstancesBuffer[i].gpuSize > 0)
 		{
 			{
-				visibleInstanceUavHandle[i] = CD3DX12_CPU_DESCRIPTOR_HANDLE(dx12->myComputeCbvSrvUavHeap.GetPerFrameCPUHandle(i, static_cast<UINT>(ComputeUavDynamicOffsets::VisibleInstanceIndices)));
+				visibleInstanceUavHandle[i] = CD3DX12_CPU_DESCRIPTOR_HANDLE(dx12->myComputeCbvSrvUavHeap.GetPerFrameCPUHandle(i, static_cast<UINT>(ComputeUavDynamicOffsets::VisibleInstanceIndices), static_cast<UINT>(ComputeHeapSpaces::ComputeData)));
 
 				D3D12_UNORDERED_ACCESS_VIEW_DESC uavArgsDesc = {};
 				uavArgsDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
@@ -80,7 +80,7 @@ void InstanceBuffer::Update(ComPtr<ID3D12GraphicsCommandList>& aCommandList)
 				dx12->myDevice->CreateUnorderedAccessView(visibleInstancesBuffer[i].resource.Get(), nullptr, &uavArgsDesc, visibleInstanceUavHandle[i]);
 			}
 			{
-				CD3DX12_CPU_DESCRIPTOR_HANDLE handle(dx12->myGraphicsCbvSrvUavHeap.GetPerFrameCPUHandle(i, static_cast<UINT>(GraphicsSrvDynamicOffsets::VisibleInstanceIndices)));
+				CD3DX12_CPU_DESCRIPTOR_HANDLE handle(dx12->myGraphicsCbvSrvUavHeap.GetPerFrameCPUHandle(i, static_cast<UINT>(GraphicsSrvDynamicOffsets::VisibleInstanceIndices), static_cast<UINT>(GraphicsHeapSpaces::Generic)));
 
 				D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
 				srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
